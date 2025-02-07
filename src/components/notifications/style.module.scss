@@ -1,0 +1,82 @@
+.notifications {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    z-index: 1;
+    pointer-events: none;
+
+    .notification {
+        background-color: #7968a6;
+        color: #e4deff;
+        font-weight: bold;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        padding: 7px 15px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: flex-start;
+        line-height: 24px;
+        flex-flow: wrap-reverse;
+        pointer-events: all;
+
+
+        .notification_message {
+            margin: 0;
+            flex: 1;
+        }
+
+        .notification_button {
+            position: relative;
+            background-color: transparent;
+            color: white;
+            border: none;
+            cursor: pointer;
+            width: auto;
+            height: 24px;
+            line-height: 24px;
+
+            &::before,
+            &::after {
+                content: "";
+                display: block;
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 20px;
+                height: 2px;
+                background-color: transparent;
+                transition: background-color 0.3s ease;
+            }
+
+            &::before {
+                transform: translate(-50%, -50%) rotate(45deg);
+            }
+
+            &::after {
+                transform: translate(-50%, -50%) rotate(-45deg);
+            }
+
+        }
+
+
+        &:hover {
+
+            .notification_button {
+
+                .notification_button {
+
+                    &::before,
+                    &::after {
+                        background-color: #ad9cff;
+                    }
+                }
+
+            }
+
+        }
+    }
+}

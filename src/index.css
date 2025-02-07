@@ -1,0 +1,30 @@
+@import url('https://fonts.cdnfonts.com/css/budokan-rounded');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@100..900&family=Poetsen+One&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap');
+body {
+  background-color: #1b1b32;
+  color: #fff;
+  margin: 0;
+  padding: 0;
+  font-family: "Noto Sans TC", -apple-system, BlinkMacSystemFont, 'Arial', 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+.button {
+  font-family: "Poetsen One", "Budokan Rounded", sans-serif;
+  border: none;
+  fill: white;
+  color: white;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+ion-icon {
+  pointer-events: none;
+}

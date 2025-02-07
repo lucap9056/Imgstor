@@ -1,0 +1,304 @@
+.signin_container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(-30deg, #464eca 0%, #513db1 100%);
+
+    .signin {
+        background-color: #3a3e4c;
+        border-radius: 9px;
+        display: flex;
+        flex-flow: row;
+        box-shadow: 4px 5px 10px #2821217d;
+
+
+
+        @media (max-width: 819px) {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: unset;
+            border-radius: unset;
+            box-shadow: unset;
+            flex-flow: column-reverse;
+            align-items: center;
+            justify-content: center;
+        }
+
+
+        .signin_left {
+            display: flex;
+            flex-flow: column;
+            justify-content: center;
+
+            @media (max-width: 819px) {
+                flex: unset;
+            }
+
+            .signin_appname {
+                text-align: center;
+                line-height: 72px;
+                font-size: 42px;
+            }
+
+            .signin_button {
+                margin: 15px;
+                line-height: 54px;
+                font-size: 18px;
+                font-family: unset;
+                font-weight: bold;
+                border-radius: 5px;
+                padding: 0 20px;
+                color: #fff;
+                background: linear-gradient(30deg, #464eca 0%, #513db1 100%);
+                transition-duration: 250ms;
+
+                &:hover {
+                    scale: 1.05;
+                }
+
+                &:active {
+                    scale: 0.97;
+                }
+            }
+        }
+
+
+        .signin_right {
+            position: relative;
+            width: 400px;
+            height: 360px;
+            display: flex;
+            flex-flow: column;
+
+
+            .signin_mark {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                margin: 10px;
+                background: linear-gradient(155deg, #75abff 0%, #3f3989 90%);
+                border-radius: 12px;
+
+                .signin_mark_cloud1,
+                .signin_mark_cloud2,
+                .signin_mark_cloud3 {
+                    font-size: 120px;
+                    position: absolute;
+                    width: 120px;
+                    height: 120px;
+                    display: flex;
+                    pointer-events: none;
+                    opacity: 0;
+                    filter: drop-shadow(0 0 6px #302e3375);
+                    transition-duration: 250ms;
+                }
+
+                .signin_mark_cloud1 .signin_mark_cloud {
+                    position: absolute;
+                    right: 0;
+                    bottom: 10px;
+                    width: 20px;
+                    height: 20px;
+                    border: solid #31b4c9 10px;
+                    border-radius: 100%;
+                    background-color: #fff;
+                }
+
+                .signin_mark_cloud2 .signin_mark_cloud {
+                    position: absolute;
+                    right: 0;
+                    bottom: 10px;
+                    width: 20px;
+                    height: 20px;
+                    border: solid #31b4c9 10px;
+                    background-color: #fff;
+                    transform: rotate(-10deg);
+                }
+
+                .signin_mark_cloud3 {
+
+                    .signin_mark_cloud {
+                        position: absolute;
+                        right: 0;
+                        bottom: 10px;
+                        border-style: solid;
+                        border-width: 0 25px 40px 25px;
+                        border-color: transparent transparent #31b4c9 transparent;
+                    }
+
+                    .signin_mark_cloud::before {
+                        content: "";
+                        position: absolute;
+                        top: 13px;
+                        border-style: solid;
+                        border-width: 0 11px 20px 11px;
+                        border-color: transparent transparent #fff transparent;
+                        left: -11px;
+                    }
+
+                }
+
+
+
+                .signin_mark_file {
+                    width: 146px;
+                    height: 94px;
+                    background-color: #5f3fb8;
+                    border-radius: 5px;
+                    box-shadow: 0 0 10px #323232;
+                    transition-duration: 250ms;
+
+                    &::before {
+                        content: "";
+                        position: absolute;
+                        top: 23px;
+                        left: 35px;
+                        width: 25px;
+                        height: 25px;
+                        background-color: #fff;
+                        border-radius: 100%;
+                    }
+
+                    &::after {
+                        content: "";
+                        position: absolute;
+                        border-style: solid;
+                        border-color: transparent transparent #fff transparent;
+                        border-width: 50px;
+                        width: 0;
+                        height: 0;
+                        top: -20px;
+                        left: 35px;
+                        border-radius: 5px;
+                    }
+
+                    &:hover~.signin_mark_file {
+                        opacity: 0;
+                    }
+
+                    &:hover {
+                        transform: rotateY(0);
+                        scale: 1.1;
+                        transform: translateY(-20px);
+                        background-color: #7d59de;
+                    }
+                }
+
+                .signin_mark_file1 {
+                    position: absolute;
+                    top: 118px;
+                    left: 125px;
+                    transform: rotateY(-25deg) rotateZ(5deg);
+
+
+                    &~.signin_mark_cloud1 {
+                        top: -5px;
+                        left: 10px;
+                    }
+
+                    &:hover~.signin_mark_cloud1 {
+                        opacity: 1;
+                    }
+
+                    &~.signin_mark_cloud1::before {
+                        content: "";
+                        position: absolute;
+                        top: 95px;
+                        left: 60px;
+                        width: 40px;
+                        height: 60px;
+                        border-style: dashed;
+                        border-width: 2px;
+                        border-color: transparent transparent white white;
+                        border-radius: 0 0 0 10px;
+                    }
+                }
+
+                .signin_mark_file2 {
+                    position: absolute;
+                    top: 132px;
+                    left: 110px;
+                    transform: rotateY(-17deg) rotateZ(-5deg);
+
+
+                    &~.signin_mark_cloud2 {
+                        top: -5px;
+                        left: 240px;
+                    }
+
+                    &:hover~.signin_mark_cloud2 {
+                        opacity: 1;
+                    }
+
+                    &~.signin_mark_cloud2::before {
+                        content: "";
+                        position: absolute;
+                        top: 95px;
+                        left: 25px;
+                        width: 30px;
+                        height: 60px;
+                        border-style: dashed;
+                        border-width: 2px;
+                        border-color: transparent white white transparent;
+                        border-radius: 0 0 10px 0;
+                    }
+                }
+
+                .signin_mark_file3 {
+                    position: absolute;
+                    top: 152px;
+                    left: 100px;
+                    transform: rotateY(-10deg) rotateZ(-20deg);
+
+                    &~.signin_mark_cloud3 {
+                        top: -5px;
+                        left: 120px;
+                    }
+
+                    &:hover~.signin_mark_cloud3 {
+                        opacity: 1;
+                    }
+
+                    &~.signin_mark_cloud3::before {
+                        content: "";
+                        position: absolute;
+                        top: 95px;
+                        left: 55px;
+                        width: 0;
+                        height: 22px;
+                        border-style: dashed;
+                        border-width: 2px;
+                        border-color: transparent white transparent transparent;
+                    }
+                }
+
+            }
+
+
+            .signin_description {
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                margin: 20px;
+                padding: 10px;
+                border-radius: 6px;
+                background-color: #020f285c;
+                min-height: 60px;
+                backdrop-filter: blur(5px);
+            }
+        }
+
+    }
+
+}

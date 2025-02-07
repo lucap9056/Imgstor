@@ -1,0 +1,61 @@
+.images_container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 70px 20px 20px;
+    overflow-y: auto;
+
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin: 0 auto;
+
+    @media (max-width: 819px) {
+        padding: 10px 20px 80px;
+    }
+
+    .image {
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+
+        .image_preview {
+            width: 100%;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+
+        .image_title {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            max-width: calc(100% - 60px);
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        .image_copy_link {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        &:hover .image_copy_link {
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+    }
+}

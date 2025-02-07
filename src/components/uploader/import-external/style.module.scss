@@ -1,0 +1,14 @@
+.uploader_import {
+    display: flex;
+    flex-flow: column;
+    gap: 8px;
+    margin: 5px;
+
+    input {
+        border: none;
+        height: 24px;
+        border-radius: 3px;
+        padding: 4px;
+        font-size: 14px;
+    }
+}

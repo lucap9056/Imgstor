@@ -1,0 +1,54 @@
+.setting_block_toggle {
+    display: flex;
+    flex-flow: row;
+    align-items: center;
+    margin: 5px 0;
+
+    .setting_block_toggle_label {
+        margin-right: 8px;
+        min-width: 70px;
+        text-align: right;
+    }
+
+    .setting_block_toggle_value {
+        width: 48px;
+        height: 26px;
+        background-color: #fff;
+        border-radius: 12px;
+        position: relative;
+        box-shadow: 0 0 3px #000 inset;
+
+        &::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            margin: 2px;
+            width: 18px;
+            height: 18px;
+            border: solid 2px #a8a8a8;
+            border-radius: 18px;
+            background-color: #d1c5dd;
+            transition-duration: 250ms;
+        }
+
+        &:active::before {
+            width: 27px;
+            border: solid 2px #a49db9;
+            background-color: #b29ce0;
+        }
+
+        &[data-enabled="true"] {
+            &::before {
+                left: calc(100% - 26px);
+                border: solid 2px #9771ff;
+                background-color: #6a45ec;
+            }
+
+            &:active::before {
+                left: calc(100% - 35px);
+                border: solid 2px #9b7eea;
+                background-color: #8d73e0;
+            }
+        }
+    }
+}

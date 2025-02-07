@@ -1,0 +1,45 @@
+.menu {
+    height: 34px;
+    width: 34px;
+    padding: 10px;
+    margin: 0 10px;
+    fill: white;
+    font-size: 34px;
+    position: relative;
+    display: flex;
+
+    @media (max-width: 819px) {
+        width: 100%;
+        height: unset;
+        padding: unset;
+        margin: unset;
+        justify-content: center;
+    }
+
+    .menu_options {
+        position: absolute;
+        top: 100%;
+        right: 10px;
+        min-width: 200px;
+        background-color: #241c5c;
+        height: auto;
+        box-shadow: 0 9px 20px 0px #0005;
+        border-radius: 5px;
+        list-style: none;
+        margin-top: 2px;
+        font-size: 18px;
+
+        @media (max-width: 819px) {
+            top: unset;
+            bottom: 100%;
+            right: 0;
+            z-index: 1;
+        }
+
+        .menu_option {
+            position: relative;
+            padding: 5px 20px;
+            cursor: default;
+        }
+    }
+}

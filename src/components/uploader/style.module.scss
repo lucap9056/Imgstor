@@ -1,0 +1,270 @@
+.uploader_container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #0004;
+    backdrop-filter: blur(2px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1;
+
+    .uploader {
+        background-color: #323279;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        width: 400px;
+        max-width: 90%;
+        display: flex;
+        flex-flow: column;
+
+
+        @media (max-width: 819px) {
+            position: absolute;
+            bottom: 0;
+            max-height: calc(100% - 40px);
+            overflow-y: auto;
+        }
+
+        .image_hosting_services {
+            position: relative;
+            background-color: #55a;
+            padding: 28px 10px 5px 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+
+            .image_hosting_service {
+                padding: 0 5px;
+                background-color: #8164e9;
+                border-radius: 3px;
+                cursor: pointer;
+                user-select: none;
+                float: left;
+                margin: 2px;
+
+                &[data-selected="false"] {
+                    background-color: #43439f;
+                }
+
+                &[data-selected="true"] {
+                    background-color: #8164e9;
+                }
+            }
+
+            &::before {
+                content: attr(data-text);
+                position: absolute;
+                top: 0;
+                left: 0;
+                margin-left: 13px;
+                line-height: 28px;
+            }
+        }
+
+        .upload_title {
+            padding: 10px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .upload_image {
+            position: relative;
+            display: inline-flex;
+            flex-direction: column;
+            height: 150px;
+            margin-bottom: 10px;
+            background-color: #444488;
+            border: 2px dashed #6666aa;
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 16px;
+            transition-duration: 125ms;
+            user-select: none;
+
+            &[data-active="true"] {
+                border-color: #ccc;
+                background-color: #6666bb;
+            }
+
+            .upload_select_file {
+                line-height: 24px;
+                z-index: 1;
+            }
+        }
+
+
+        .upload_image_selected {
+            display: inline-flex;
+            flex-flow: column;
+            width: 100%;
+
+            img {
+                max-width: 100%;
+                border-radius: 7px;
+                max-height: 50vh;
+                margin-bottom: 5px;
+                object-fit: contain;
+
+
+                @media (max-width: 819px) {
+                    max-height: unset;
+                }
+            }
+
+            .upload_remove {
+                margin: 5px;
+            }
+        }
+
+        button {
+            border: none;
+            border-radius: 4px;
+            text-align: center;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #5555aa;
+
+            &:hover {
+                background-color: #6666bb;
+            }
+        }
+
+        .upload_description {
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            resize: none;
+            margin-bottom: 10px;
+        }
+
+        .upload_save {
+            display: flex;
+            flex-flow: row;
+            align-items: center;
+            margin: 5px 0;
+
+            .upload_save_label {
+                margin-right: 8px;
+                text-align: right;
+                margin-left: 6px;
+            }
+
+            .upload_save_value {
+                width: 48px;
+                height: 26px;
+                background-color: #fff;
+                border-radius: 12px;
+                position: relative;
+                box-shadow: 0 0 3px #000 inset;
+
+                &::before {
+                    content: "";
+                    position: absolute;
+                    left: 0;
+                    margin: 2px;
+                    width: 18px;
+                    height: 18px;
+                    border: solid 2px #a8a8a8;
+                    border-radius: 18px;
+                    background-color: #d1c5dd;
+                    transition-duration: 250ms;
+                }
+
+                &:active::before {
+                    width: 27px;
+                    border: solid 2px #a49db9;
+                    background-color: #b29ce0;
+                }
+
+                &[data-enabled="true"]::before {
+                    left: calc(100% - 26px);
+                    border: solid 2px #9771ff;
+                    background-color: #6a45ec;
+
+                    &:active::before {
+                        left: calc(100% - 35px);
+                        border: solid 2px #9b7eea;
+                        background-color: #8d73e0;
+                    }
+                }
+
+            }
+        }
+
+
+
+        .upload_selected_tags {
+            padding: 0 4px 4px 4px;
+
+            .upload_selected_tag {
+                position: relative;
+                float: left;
+                padding: 1px 3px;
+                background-color: #9469e0;
+                border-radius: 4px;
+                font-size: 12px;
+                margin: 4px;
+                cursor: default;
+                user-select: none;
+            }
+        }
+
+
+        .options {
+            width: 100%;
+            display: inline-flex;
+            flex-flow: revert;
+
+            button {
+                padding: 10px;
+                margin: 5px;
+                margin-bottom: 10px;
+                flex: 1;
+            }
+        }
+
+    }
+
+
+    label {
+        height: 20px;
+        padding-left: 5px;
+        line-height: 20px;
+        margin-bottom: 5px;
+    }
+}
+
+.upload_full_screen_preview_container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    display: flex;
+    background-color: #0007;
+
+    .upload_full_screen_preview_close {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+    }
+
+    .upload_full_screen_preview {
+        margin: auto;
+        max-width: 100%;
+        max-height: 100%;
+    }
+}

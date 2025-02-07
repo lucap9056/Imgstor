@@ -1,0 +1,101 @@
+.main_desktop_header {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    background: linear-gradient(170deg, #5637c6, #1f1f5a);
+    box-shadow: 0 0 8px 4px #000A;
+    z-index: 1;
+
+    @media (max-width: 819px) {
+        display: none;
+    }
+
+    .main_desktop_header_left,
+    .main_desktop_header_center,
+    .main_desktop_header_right {
+        display: inline-flex;
+        flex: 1;
+        align-items: center;
+    }
+
+    .main_desktop_header_right {
+        justify-content: end;
+
+        .main_desktop_header_right_button {
+            width: auto;
+            height: 34px;
+            background-color: #592bff;
+            border-radius: 7px;
+            box-shadow: 0 4px 8px #0003;
+            margin: 10px;
+            padding: 4px 20px;
+            line-height: 28px;
+            font-size: 28px;
+            color: white;
+            border: none;
+
+            &:before {
+                content: attr(data-text);
+                font-size: 28px;
+                margin-right: 5px;
+                display: block;
+                float: left;
+            }
+
+            &:hover {
+                background-color: #401adb;
+            }
+
+            &:active {
+                background-color: #452db9;
+            }
+        }
+
+    }
+}
+
+
+.main_mobile_header {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    justify-content: center;
+    background: linear-gradient(to right, #5637c6, #1f1f5a);
+    box-shadow: 0 0 8px 4px #000A;
+    z-index: 1;
+    flex-flow: column-reverse;
+
+    @media (max-width: 819px) {
+        display: flex;
+    }
+
+    .main_mobile_header_buttons {
+        display: flex;
+        flex-flow: row;
+        padding: 6px;
+        gap: 6px;
+        height: 36px;
+
+        .main_mobile_header_button {
+            flex: 1;
+            background: transparent;
+            font-size: 2rem;
+            align-items: center;
+            display: flex;
+            justify-content: center;
+            height: unset;
+            width: unset;
+            padding: 5px;
+            margin: 0;
+            border-radius: 4px;
+
+            &[data-active="true"] {
+                background-color: #afa5f56b;
+            }
+        }
+    }
+}
