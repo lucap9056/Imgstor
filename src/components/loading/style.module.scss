@@ -6,13 +6,12 @@
     bottom: 0;
     z-index: 1;
 
-
     .loading {
         position: absolute;
         top: 50%;
         left: 50%;
-        width: 120px;
-        height: 120px;
+        width: 7.5rem;
+        height: 7.5rem;
         transform: translate(-50%, -50%);
         animation: rotate 5s infinite linear;
         border-radius: 100%;
@@ -35,14 +34,14 @@
             }
 
             &.triangle::before {
-                border-width: 25px 60px 25px 0;
+                border-width: 1.5625rem 3.75rem 1.5625rem 0;
                 border-radius: 100%;
             }
 
             &.line::before {
-                border-width: 3px 7px 3px 0;
-                width: 53px;
-                height: 40px;
+                border-width: 0.1875rem 0.4375rem 0.1875rem 0;
+                width: 3.3125rem;
+                height: 2.5rem;
                 border-radius: 100%;
             }
 
@@ -87,7 +86,6 @@
         }
     }
 }
-
 
 @keyframes rotate {
     0% {

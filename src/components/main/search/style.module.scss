@@ -4,12 +4,12 @@
     margin: auto;
 
     .search_button {
-        width: 42px;
-        height: 42px;
+        width: 2.625rem;
+        height: 2.625rem;
         padding: 0;
         background-color: transparent;
-        font-size: 28px;
-        line-height: 16px;
+        font-size: 1.75rem;
+        line-height: 1rem;
 
         &:hover {
             background-color: #361a9aa0;
@@ -21,24 +21,24 @@
     }
 
     .search_input {
-        width: 240px;
-        height: 32px;
+        width: 15rem;
+        height: 2rem;
         border: none;
-        border-radius: 4px;
+        border-radius: 0.25rem;
         background: linear-gradient(165deg, #6544ff 0%, #7228f7 100%);
         outline: none;
         color: white;
-        padding: 0 10px;
-        font-size: 16px;
+        padding: 0 0.625rem;
+        font-size: 1rem;
 
-        @media (max-width: 819px) {
+        @media (max-width: 51.1875rem) {
             width: unset;
             flex: 1;
-            box-shadow: 0 0 0 2px #1f1f5a;
+            box-shadow: 0 0 0 0.125rem #1f1f5a;
         }
     }
 
-    @media (max-width: 819px) {
+    @media (max-width: 48rem) {
         display: flex;
     }
 }

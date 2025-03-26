@@ -15,39 +15,39 @@
 
     .alert {
         color: #ffffff;
-        padding: 20px;
+        padding: 1.25rem;
         border-radius: 10px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         text-align: center;
-        min-width: 400px;
-        max-width: 600px;
+        min-width: 25rem;
+        max-width: 37.5rem;
         margin: auto;
         background: linear-gradient(60deg, #474db1 0%, #3f2aa0 100%);
         box-shadow: 0 0 30px #3f2aa0 inset;
 
-        @media (max-width: 819px) {
+        @media (max-width: 48rem) {
             min-width: 0;
             width: 100vw;
         }
 
         .alert_message {
-            margin-bottom: 20px;
-            font-size: 16px;
+            margin-bottom: 1.25rem;
+            font-size: 1rem;
         }
 
         .alert_button {
             background-color: #5557d6;
             color: #ffffff;
             border: none;
-            padding: 0px 20px;
+            padding: 0 1.25rem;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 14px;
-            margin: 5px;
+            font-size: 0.875rem;
+            margin: 0.3125rem;
             transition: background-color 0.3s ease;
-            line-height: 32px;
-            height: 32px;
-            min-width: 80px;
+            line-height: 2rem;
+            height: 2rem;
+            min-width: 5rem;
 
             &:hover {
                 background-color: #544bbc;

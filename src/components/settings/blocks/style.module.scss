@@ -1,18 +1,18 @@
 .setting_block {
     .setting_block_title {
         position: relative;
-        line-height: 28px;
+        line-height: 1.75rem;
         background-color: #5e37cb;
-        margin-left: -20px;
-        padding: 0 15px;
-        font-size: 16px;
-        border-radius: 3px;
+        margin-left: -1.25rem;
+        padding: 0 0.9375rem;
+        font-size: 1rem;
+        border-radius: 0.1875rem;
         cursor: default;
         user-select: none;
     }
 
     .setting_block_content {
-        height: 0px;
+        height: 0;
         transition: height 0.3s ease-in-out;
         overflow-y: scroll;
     }

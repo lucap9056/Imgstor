@@ -1,14 +1,14 @@
 .menu {
-    height: 34px;
-    width: 34px;
-    padding: 10px;
-    margin: 0 10px;
+    height: 2.125rem;
+    width: 2.125rem;
+    padding: 0.625rem;
+    margin: 0 0.625rem;
     fill: white;
-    font-size: 34px;
+    font-size: 2.125rem;
     position: relative;
     display: flex;
 
-    @media (max-width: 819px) {
+    @media (max-width: 48rem) {
         width: 100%;
         height: unset;
         padding: unset;
@@ -19,17 +19,17 @@
     .menu_options {
         position: absolute;
         top: 100%;
-        right: 10px;
-        min-width: 200px;
+        right: 0.625rem;
+        min-width: 12.5rem;
         background-color: #241c5c;
         height: auto;
-        box-shadow: 0 9px 20px 0px #0005;
-        border-radius: 5px;
+        box-shadow: 0 0.5625rem 1.25rem 0px #0005;
+        border-radius: 0.3125rem;
         list-style: none;
-        margin-top: 2px;
-        font-size: 18px;
+        margin-top: 0.125rem;
+        font-size: 1.125rem;
 
-        @media (max-width: 819px) {
+        @media (max-width: 48rem) {
             top: unset;
             bottom: 100%;
             right: 0;
@@ -38,7 +38,7 @@
 
         .menu_option {
             position: relative;
-            padding: 5px 20px;
+            padding: 0.3125rem 1.25rem;
             cursor: default;
         }
     }

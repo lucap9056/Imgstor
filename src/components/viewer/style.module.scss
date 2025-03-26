@@ -11,91 +11,84 @@
 
     .viewer {
         position: relative;
-        width: 800px;
+        width: 50rem;
         margin: auto;
         display: flex;
         flex-flow: row;
-        gap: 20px;
+        gap: 1.25rem;
 
-
-        @media (max-width: 819px) {
+        @media (max-width: 48rem) {
             width: 100%;
-            padding: 20px 20px 72px;
+            padding: 1.25rem 1.25rem 4.5rem;
         }
 
         .viewer_main {
             display: flex;
             flex-flow: column;
-            gap: 10px;
+            gap: 0.625rem;
             flex: 1;
 
-
             .viewer_title {
-                padding: 0 10px;
-                font-size: 24px;
-                line-height: 24px;
+                padding: 0 0.625rem;
+                font-size: 1.5rem;
+                line-height: 1.5rem;
                 word-break: break-all;
             }
 
             .viewer_title_edit {
                 background-color: #6b53e0;
-                border-radius: 5px;
+                border-radius: 0.3125rem;
                 color: #fff;
                 outline: none;
-                line-height: 24px;
-                font-size: 24px;
+                line-height: 1.5rem;
+                font-size: 1.5rem;
                 border: none;
-                padding: 2px 10px;
+                padding: 0.125rem 0.625rem;
             }
 
             .viewer_image {
                 position: relative;
                 display: flex;
 
-
-                @media (max-width: 819px) {
+                @media (max-width: 48rem) {
                     position: relative;
                     display: flex;
                     flex-flow: column;
-                    gap: 10px;
+                    gap: 0.625rem;
                 }
 
                 img {
                     max-height: 80vh;
                     overflow: hidden;
                     flex: 1;
-                    filter: drop-shadow(0 0 10px #0005);
+                    filter: drop-shadow(0 0 0.625rem #0005);
                     object-fit: contain;
                     width: 100%;
 
-
-                    @media (max-width: 819px) {
+                    @media (max-width: 48rem) {
                         flex: none;
                         object-fit: contain;
                         max-height: unset;
                     }
                 }
-
             }
-
-
 
             .viewer_image_tags {
                 position: relative;
                 border-style: solid;
                 border-color: #3b21b8;
-                border-width: 32px 1px 1px 1px;
-                border-radius: 5px;
-                min-height: 32px;
+                border-width: 2rem 0.0625rem 0.0625rem 0.0625rem;
+                border-radius: 0.3125rem;
+                min-height: 2rem;
 
                 &::before {
                     content: attr(data-text);
                     position: absolute;
-                    top: -32px;
-                    left: 0px;
-                    right: 0px;
-                    height: 32px;
-                    line-height: 32px;
+                    top: -2rem;
+                    left: 0;
+                    right: 0;
+                    height: 2rem;
+                    line-height: 2rem;
                     overflow: hidden;
                     text-align: center;
                 }
@@ -103,38 +96,36 @@
                 .viewer_image_tag {
                     position: relative;
                     float: left;
-                    margin: 5px;
+                    margin: 0.3125rem;
                     background-color: #5558e7;
-                    padding: 2px 5px;
-                    border-radius: 4px;
+                    padding: 0.125rem 0.3125rem;
+                    border-radius: 0.25rem;
                     cursor: default;
                     user-select: none;
                 }
             }
 
-
-
             .viewer_description {
-                padding: 12px;
+                padding: 0.75rem;
                 background-color: #121226;
-                border-radius: 7px;
+                border-radius: 0.4375rem;
             }
 
             .viewer_description_edit {
                 background-color: #6b53e0;
-                border-radius: 5px;
+                border-radius: 0.3125rem;
                 color: #fff;
                 outline: none;
-                line-height: 18px;
-                font-size: 16px;
+                line-height: 1.125rem;
+                font-size: 1rem;
                 border: none;
-                padding: 12px;
+                padding: 0.75rem;
             }
 
             .viewer_title,
             .viewer_description {
                 .viewer_edit {
-                    margin: 0 5px;
+                    margin: 0 0.3125rem;
                 }
             }
         }
@@ -142,35 +133,33 @@
         .viewer_options {
             display: flex;
             flex-flow: column;
-            gap: 10px;
-            width: 200px;
+            gap: 0.625rem;
+            width: 12.5rem;
 
-
-            @media (max-width: 819px) {
+            @media (max-width: 48rem) {
                 position: absolute;
                 flex-flow: row;
-                bottom: 12px;
-                height: 48px;
+                bottom: 0.75rem;
+                height: 3rem;
                 width: unset;
                 left: 0;
                 right: 0;
-                padding: 0 20px;
+                padding: 0 1.25rem;
             }
-
 
             .viewer_option {
                 position: relative;
                 list-style: none;
                 background-color: #3b21b8;
-                border-radius: 5px;
-                font-size: 16px;
+                border-radius: 0.3125rem;
+                font-size: 1rem;
                 display: flex;
                 flex-flow: row;
                 align-items: center;
-                gap: 10px;
-                transition-duration: 125ms;
-                padding: 4px 10px;
-                line-height: 20px;
+                gap: 0.625rem;
+                transition-duration: 0.125s;
+                padding: 0.25rem 0.625rem;
+                line-height: 1.25rem;
 
                 &:hover {
                     background-color: #36229e;
@@ -181,15 +170,14 @@
                 }
 
                 ion-icon {
-                    font-size: 24px;
+                    font-size: 1.5rem;
                 }
 
                 &::after {
                     content: attr(data-text);
                 }
 
-
-                @media (max-width: 819px) {
+                @media (max-width: 48rem) {
                     flex: 1;
                     justify-content: center;
 
@@ -199,7 +187,5 @@
                 }
             }
         }
-
-
     }
 }
