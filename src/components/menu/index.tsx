@@ -3,13 +3,14 @@
  */
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { IonIcon } from '@ionic/react';
 
 import Imgstor from 'services/imgstor';
 import { useNavigate } from 'react-router-dom';
 import RoutePaths from "route-paths";
 
 import styles from "components/menu/style.module.scss";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBars } from '@fortawesome/free-solid-svg-icons';
 
 interface Props {
     imgstor: Imgstor
@@ -49,7 +50,7 @@ const Menu: React.FC<Props> = ({ imgstor }) => {
     }
 
     return <div ref={menuRef} className={styles.menu}>
-        <IonIcon icon="menu" />
+        <FontAwesomeIcon icon={faBars} />
         {
             display ?
                 <div className={styles.menu_options}>

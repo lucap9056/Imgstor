@@ -8,6 +8,10 @@
     position: relative;
     display: flex;
 
+    svg {
+        pointer-events: none;
+    }
+
     @media (max-width: 48rem) {
         width: 100%;
         height: unset;

@@ -1,4 +1,3 @@
-import { IonIcon } from "@ionic/react";
 import React, { useEffect, useState } from "react";
 import Imgstor, { SearchContent } from "services/imgstor";
 import ImgstorDB, { ImgstorTag, ImgstorImage } from "services/imgstor-db";
@@ -6,6 +5,8 @@ import { TagsSelecterEvent } from "services/tags-selecter";
 
 
 import styles from "components/main/search/style.module.scss";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faMagnifyingGlass, faTags } from "@fortawesome/free-solid-svg-icons";
 
 interface Props {
     imgstor: Imgstor
@@ -62,11 +63,11 @@ const Search: React.FC<Props> = ({ imgstor, onchange }) => {
 
     return <form className={styles.search} onSubmit={HandleSearch}>
         <button type="button" className={styles.search_button} onClick={HandleSelectTags} >
-            <IonIcon icon="pricetags"></IonIcon>
+            <FontAwesomeIcon icon={faTags} />
         </button>
         <input type="text" className={styles.search_input} name="search" autoComplete="off" />
         <button type="submit" className={styles.search_button}>
-            <IonIcon icon="search"></IonIcon>
+            <FontAwesomeIcon icon={faMagnifyingGlass} />
         </button>
     </form>;
 }

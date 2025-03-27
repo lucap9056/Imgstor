@@ -1,4 +1,3 @@
-import { IonIcon } from "@ionic/react";
 import { imgstorNotifications } from "components/notifications";
 import React, { useEffect, useState } from "react";
 
@@ -14,6 +13,8 @@ import { useTranslation } from "react-i18next";
 
 export const BASE_WIDTH = 240;
 export const BASE_HEIGHT = 20;
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCopy } from "@fortawesome/free-solid-svg-icons";
 
 interface Props {
     imgstor: Imgstor
@@ -144,7 +145,7 @@ const ImageComponenet: React.FC<Props> = ({ imgstor, image, onload }) => {
             <img className={styles.image_preview} alt={t("image_preview_failed")} onError={HandleImageError} src={preview} onClick={HandleFocusView} onLoad={HandleImageLoad} loading="lazy" />
 
             <div className={styles.image_copy_link} onClick={HandleCopyLink}>
-                <IonIcon icon="clipboard" />
+                <FontAwesomeIcon icon={faCopy} />
             </div>
         </>
         }
