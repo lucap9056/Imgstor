@@ -7,7 +7,7 @@ import cookies from "js-cookie";
 import Imgstor, { ImgstorEvent, SearchContent } from 'services/imgstor';
 import { ImgstorImage, ImgstorImageSort as Sort } from 'services/imgstor-db';
 
-import ImageComponenet, { BASE_WIDTH } from './image';
+import ImageComponenet from './image';
 import { loadingManager } from 'components/loading';
 
 import styles from "components/images/style.module.scss";
@@ -16,12 +16,16 @@ const enum SEARCH {
     LIMIT = 30
 }
 
+const enum IMAGE {
+    BASE_WIDTH = 160
+}
+
 interface Props {
     imgstor: Imgstor
 }
 
-function GetGridTemplateColumns() {
-    return `repeat(${Math.floor(document.documentElement.clientWidth / BASE_WIDTH)}, 1fr)`;
+function GetColumnCount(): number {
+    return Math.floor(document.documentElement.clientWidth / IMAGE.BASE_WIDTH);
 }
 
 const Images: React.FC<Props> = ({ imgstor }) => {
@@ -34,7 +38,7 @@ const Images: React.FC<Props> = ({ imgstor }) => {
     const [latestUpload, SetLatestUpload] = useState(0);
     const [searchOffset, SetSearchOffset] = useState(0);
     const [hasMoreImages, SetHasMoreImages] = useState(false);
-    const [gridTemplateColumns, SetGridColumns] = useState(GetGridTemplateColumns());
+    const [columnCount, SetColumnCount] = useState(GetColumnCount());
 
     useEffect(() => {
         const { title, sort } = searchContent;
@@ -71,7 +75,7 @@ const Images: React.FC<Props> = ({ imgstor }) => {
         }
 
         const WindowResizeHandler = () => {
-            SetGridColumns(GetGridTemplateColumns());
+            SetColumnCount(GetColumnCount());
         };
 
         imgstor.DB.on("ImageUpdated", ImageUpdatedHandler);
@@ -91,13 +95,23 @@ const Images: React.FC<Props> = ({ imgstor }) => {
     }
 
     return <>
-        <div className={styles.images_container} style={{ gridTemplateColumns }}>
-            {images.map(
-                (image, i, images) => {
-                    const onload = (hasMoreImages && i + 1 === images.length) ? HandleLoadMoreIamges : undefined;
-                    return <ImageComponenet key={image.id + image.title} imgstor={imgstor} image={image} onload={onload} />;
-                }
-            )}
+        <div className={styles.images} >
+
+            <style>
+                {`
+                :root {
+                    --image-column-count:${columnCount};
+                }`}
+            </style>
+
+            <div className={styles.images_main}>
+                {images.map(
+                    (image, i, images) => {
+                        const onload = (hasMoreImages && i + 1 === images.length) ? HandleLoadMoreIamges : undefined;
+                        return <ImageComponenet key={image.id + image.title} imgstor={imgstor} image={image} onload={onload} />;
+                    }
+                )}
+            </div>
         </div>
     </>
 }
