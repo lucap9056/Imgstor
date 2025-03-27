@@ -1,5 +1,5 @@
 import { merge } from "lodash";
-import BaseEventSystem from "structs/eventSystem";
+import EventDispatcher from "structs/event-dispatcher";
 import { Drive } from "services/google";
 
 export interface ImgstorConfig {
@@ -41,7 +41,7 @@ type SettingsEventDefinitions = {
 };
 export type SettingsEvent<T extends keyof SettingsEventDefinitions> = SettingsEventDefinitions[T];
 
-export default class Settings extends BaseEventSystem<SettingsEventDefinitions> {
+export default class Settings extends EventDispatcher<SettingsEventDefinitions> {
 
     public static readonly DefaultConfig: ImgstorConfig = {
         fileId: "",

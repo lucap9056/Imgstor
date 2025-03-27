@@ -1,4 +1,4 @@
-import BaseEventSystem from "structs/eventSystem";
+import EventDispatcher from "structs/event-dispatcher";
 import ImgstorDB, { ImgstorTag } from "./imgstor-db";
 
 interface SelectRequest {
@@ -13,7 +13,7 @@ type TagsSelecterEventDefinitions = {
 };
 export type TagsSelecterEvent<T extends keyof TagsSelecterEventDefinitions> = TagsSelecterEventDefinitions[T];
 
-export default class TagsSelecter extends BaseEventSystem<TagsSelecterEventDefinitions> {
+export default class TagsSelecter extends EventDispatcher<TagsSelecterEventDefinitions> {
     private db: ImgstorDB;
     private requests: SelectRequest[] = [];
     constructor(db: ImgstorDB) {

@@ -1,7 +1,7 @@
 /**
  * Message Button Event Definitions
  */
-import BaseEventSystem from "structs/eventSystem";
+import EventDispatcher from "structs/event-dispatcher";
 
 interface MessageButtonOptions {
     auto_remove?: boolean
@@ -13,7 +13,7 @@ type MessageButtonEventDefinitions = {
 };
 export type MessageButtonEvent<T extends keyof MessageButtonEventDefinitions> = MessageButtonEventDefinitions[T];
 
-export class MessageButton extends BaseEventSystem<MessageButtonEventDefinitions> {
+export class MessageButton extends EventDispatcher<MessageButtonEventDefinitions> {
     private readonly text: string;
     private autoRemove: boolean = true;
     private message?: Message;
@@ -156,7 +156,7 @@ type MessageManagerEventDefinitions = {
 };
 export type MessageManagerEvent<T extends keyof MessageManagerEventDefinitions> = MessageManagerEventDefinitions[T];
 
-export default class MessageManager extends BaseEventSystem<MessageManagerEventDefinitions> {
+export default class MessageManager extends EventDispatcher<MessageManagerEventDefinitions> {
     private messages: Message[] = [];
 
     private static get CreateId(): string {
