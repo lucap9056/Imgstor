@@ -2,7 +2,7 @@
  * 手動事件傳遞
  */
 import Google, { Drive } from 'services/google';
-import BaseEventSystem from 'structs/eventSystem';
+import EventDispatcher from 'structs/event-dispatcher';
 import ImgstorDB, { ImgstorTag, ImgstorImage, ImgstorImageSort } from 'services/imgstor-db';
 import Settings, { ImgstorConfig } from 'services/settings';
 import TagsSelecter from 'services/tags-selecter';
@@ -28,7 +28,7 @@ type ImgstorEventDefinitions = {
 };
 export type ImgstorEvent<T extends keyof ImgstorEventDefinitions> = ImgstorEventDefinitions[T];
 
-export default class Imgstor extends BaseEventSystem<ImgstorEventDefinitions> {
+export default class Imgstor extends EventDispatcher<ImgstorEventDefinitions> {
 
     public static readonly OriginalFilesFolderName = "original_files"
 

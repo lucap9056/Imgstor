@@ -1,4 +1,4 @@
-import BaseEventSystem from "structs/eventSystem";
+import EventDispatcher from "structs/event-dispatcher";
 import initSqlJs, { Database } from "sql.js";
 import { Drive } from 'services/google';
 
@@ -43,7 +43,7 @@ type ImgstorDBEventDefinitions = {
 export type ImgstorDBEvent<T extends keyof ImgstorDBEventDefinitions> = ImgstorDBEventDefinitions[T];
 
 
-export default class ImgstorDB extends BaseEventSystem<ImgstorDBEventDefinitions> {
+export default class ImgstorDB extends EventDispatcher<ImgstorDBEventDefinitions> {
 
     public static Base64ToUint8Array = function (base64: string): Uint8Array {
         return Uint8Array.from(atob(base64), c => c.charCodeAt(0));

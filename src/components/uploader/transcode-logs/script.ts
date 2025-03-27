@@ -1,4 +1,4 @@
-import BaseEventSystem from "structs/eventSystem";
+import EventDispatcher from "structs/event-dispatcher";
 
 export class Transcode {
     private id: string;
@@ -34,7 +34,7 @@ type TranscodeLogsEventDefinitions = {
 };
 export type TranscodeLogsEvent<T extends keyof TranscodeLogsEventDefinitions> = TranscodeLogsEventDefinitions[T];
 
-export default class TranscodeLogs extends BaseEventSystem<TranscodeLogsEventDefinitions> {
+export default class TranscodeLogs extends EventDispatcher<TranscodeLogsEventDefinitions> {
     private transcodeMap: { [id: string]: Transcode } = {};
     private state: boolean = false;
     public Println(msg: string): void {

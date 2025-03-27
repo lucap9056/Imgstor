@@ -2,7 +2,7 @@
  * Google操作函數
  */
 import { gapi } from "gapi-script";
-import BaseEventSystem from "structs/eventSystem";
+import EventDispatcher from "structs/event-dispatcher";
 
 export class NotSignedInError extends Error {
     public authInstance: gapi.auth2.GoogleAuth;
@@ -20,7 +20,7 @@ type GoogleEventDefinitions = {
 export type GoogleEvent<T extends keyof GoogleEventDefinitions> = GoogleEventDefinitions[T];
 
 
-export default class Google extends BaseEventSystem<GoogleEventDefinitions> {
+export default class Google extends EventDispatcher<GoogleEventDefinitions> {
     private drive: Drive;
     private static k = process.env.VITE_GOOGLE_API_KEY;
     private static c = process.env.VITE_GOOGLE_CLIENT_ID;

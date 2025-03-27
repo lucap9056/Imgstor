@@ -1,4 +1,4 @@
-import BaseEventSystem from "structs/eventSystem";
+import EventDispatcher from "structs/event-dispatcher";
 
 export class Loading {
     public readonly id: string;
@@ -19,7 +19,7 @@ type LoadingEventDefinitions = {
 };
 export type LoadingEvent<T extends keyof LoadingEventDefinitions> = LoadingEventDefinitions[T];
 
-export class LoadingManager extends BaseEventSystem<LoadingEventDefinitions> {
+export class LoadingManager extends EventDispatcher<LoadingEventDefinitions> {
     private loadMap: { [key: string]: Loading } = {};
     private state: boolean = false;
 
