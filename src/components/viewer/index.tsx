@@ -1,7 +1,6 @@
 import React, { useEffect, useId, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IonIcon } from '@ionic/react';
 
 import { Message, MessageButton } from 'utils/message';
 import RoutePaths from 'route-paths';
@@ -24,6 +23,8 @@ import TranscodeLogs from 'components/uploader/transcode-logs/script';
 import styles from "components/viewer/style.module.scss";
 import Title from "components/viewer/title";
 import Description from "components/viewer/description";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowUpRightFromSquare, faCloudUpload, faCopy, faDownload, faLeftLong, faTrash } from '@fortawesome/free-solid-svg-icons';
 
 interface Props {
     imgstor: Imgstor
@@ -473,30 +474,30 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
 
             <div className={styles.viewer_options}>
                 <li className={styles.viewer_option} onClick={HandleDelete} data-text={t("viewer_delete")}>
-                    <IonIcon icon="trash" />
+                    <FontAwesomeIcon icon={faTrash} />
                 </li>
                 <li className={styles.viewer_option} onClick={HandleOpen} data-text={t("viewer_open")}>
-                    <IonIcon icon="open" />
+                    <FontAwesomeIcon icon={faArrowUpRightFromSquare} />
                 </li>
                 <li className={styles.viewer_option} onClick={HandleCopyLink} data-text={t("viewer_copy_link")}>
-                    <IonIcon icon="clipboard" />
+                    <FontAwesomeIcon icon={faCopy} />
                 </li>
 
                 {image.file_id !== "" ? <>
                     <li className={styles.viewer_option} onClick={HandleDownload} data-text={t("viewer_download")}>
-                        <IonIcon icon="cloud-download" />
+                        <FontAwesomeIcon icon={faDownload} />
                     </li>
 
                     {hostingService !== undefined && hostingService.enabled ?
                         <li className={styles.viewer_option} onClick={HandleReupload} data-text={t("viewer_reupload")}>
-                            <IonIcon icon="cloud-upload" />
+                            <FontAwesomeIcon icon={faCloudUpload} />
                         </li> : null
                     }
 
                 </> : null}
 
                 <li className={styles.viewer_option} onClick={HandleBack} data-text={t("viewer_back")}>
-                    <IonIcon icon="return-down-back" />
+                    <FontAwesomeIcon icon={faLeftLong} />
                 </li>
             </div>
 

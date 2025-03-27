@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { IonIcon } from '@ionic/react';
 import cookies from "js-cookie";
+
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowDownWideShort, faCloudArrowUp, faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 
 import RoutePaths from 'route-paths';
 
@@ -74,17 +76,17 @@ const Main: React.FC<Props> = ({ imgstor }) => {
                     className={styles.main_mobile_header_button}
                     data-active={mobileMode === MOBILE_MODE.SORT}
                     onClick={() => HandleMobileSetMode(MOBILE_MODE.SORT)}>
-                    <IonIcon icon="swap-vertical" />
+                    <FontAwesomeIcon icon={faArrowDownWideShort} />
                 </button>
                 <button
                     className={styles.main_mobile_header_button}
                     data-active={mobileMode === MOBILE_MODE.SEARCH}
                     onClick={() => HandleMobileSetMode(MOBILE_MODE.SEARCH)}>
-                    <IonIcon icon="search" />
+                    <FontAwesomeIcon icon={faMagnifyingGlass} />
                 </button>
 
                 <button className={styles.main_mobile_header_button} onClick={HandleUpload}>
-                    <IonIcon icon="cloud-upload" />
+                    <FontAwesomeIcon icon={faCloudArrowUp} />
                 </button>
                 <div className={styles.main_mobile_header_button}>
                     <Menu imgstor={imgstor} />
@@ -115,7 +117,7 @@ const Main: React.FC<Props> = ({ imgstor }) => {
             </div>
             <div className={styles.main_desktop_header_right}>
                 <button className={styles.main_desktop_header_right_button} onClick={HandleUpload}>
-                    <IonIcon icon="cloud-upload" />
+                    <FontAwesomeIcon icon={faCloudArrowUp} />
                 </button>
                 <Menu imgstor={imgstor} />
             </div>

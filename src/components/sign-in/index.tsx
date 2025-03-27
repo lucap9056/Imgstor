@@ -1,9 +1,10 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { IonIcon } from '@ionic/react';
 
 import styles from "components/sign-in/style.module.scss";
 import index_styles from "@/index.module.scss";
+import { faCloud } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 interface Props {
     onSignIn: () => Promise<void>
@@ -28,17 +29,17 @@ const SignIn: React.FC<Props> = ({ onSignIn }) => {
                     <div className={`${styles.signin_mark_file3}  ${styles.signin_mark_file}`}></div>
 
                     <div className={styles.signin_mark_cloud1}>
-                        <IonIcon icon="cloud" />
+                        <FontAwesomeIcon icon={faCloud} />
                         <div className={styles.signin_mark_cloud}></div>
                     </div>
 
                     <div className={styles.signin_mark_cloud2}>
-                        <IonIcon icon="cloud" />
+                        <FontAwesomeIcon icon={faCloud} />
                         <div className={styles.signin_mark_cloud}></div>
                     </div>
 
                     <div className={styles.signin_mark_cloud3}>
-                        <IonIcon icon="cloud" />
+                        <FontAwesomeIcon icon={faCloud} />
                         <div className={styles.signin_mark_cloud}></div>
                     </div>
 

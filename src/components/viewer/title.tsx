@@ -3,12 +3,13 @@ import React, { useState } from "react";
 
 import styles from "components/viewer/style.module.scss";
 import ImgstorDB, { ImgstorImage } from "services/imgstor-db";
-import { IonIcon } from "@ionic/react";
 import { Message, MessageButton } from "utils/message";
 import { useTranslation } from "react-i18next";
 import { imgstorAlerts } from "components/alerts";
 import { loadingManager } from "components/loading";
 import { imgstorNotifications } from "components/notifications";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 
 interface Props {
     imgstorDB: ImgstorDB
@@ -81,7 +82,9 @@ const Title: React.FC<Props> = ({ imgstorDB, image }) => {
 
     return <div className={styles.viewer_title}>
         {title}
-        <span className={styles.viewer_edit} onClick={HandleEdit}><IonIcon icon="pencil" /></span>
+        <span className={styles.viewer_edit} onClick={HandleEdit}>
+            <FontAwesomeIcon icon={faPenToSquare} />
+        </span>
     </div>
 }
 
