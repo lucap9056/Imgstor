@@ -8,7 +8,7 @@ import Imgstor, { ImgstorEvent, SearchContent } from 'services/imgstor';
 import { ImgstorImage, ImgstorImageSort as Sort } from 'services/imgstor-db';
 
 import ImageComponenet from './image';
-import { loadingManager } from 'components/loading';
+import { useLoadingState } from 'components/loading';
 
 import styles from "components/images/style.module.scss";
 
@@ -29,6 +29,7 @@ function GetColumnCount(): number {
 }
 
 const Images: React.FC<Props> = ({ imgstor }) => {
+    const loadingState = useLoadingState();
     const [images, SetImages] = useState<ImgstorImage[]>(imgstor.DB.GetImages());
     const [searchContent, SetSearchContent] = useState<SearchContent>({
         title: "",
@@ -45,7 +46,7 @@ const Images: React.FC<Props> = ({ imgstor }) => {
 
         const tags = searchContent.tags.map((t) => t.id);
 
-        const loading = loadingManager.Append();
+        const loading = loadingState.Append();
 
         const searchResult = imgstor.DB.SearchImages({
             include: ["id", "title", "width", "height", "link", "preview", "hosting_service"], tags, sort,

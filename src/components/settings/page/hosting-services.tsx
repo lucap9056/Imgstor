@@ -5,8 +5,8 @@ import Block from "components/settings/blocks";
 import Textbox from "components/settings/blocks/textbox";
 import Toggle from "components/settings/blocks/toggle";
 import Label from "components/settings/blocks/label";
-import { loadingManager } from "components/loading";
-import { imgstorNotifications } from "components/notifications";
+import { useLoadingState } from "components/loading";
+import { useNotifications } from "components/notifications";
 
 import Imgstor from "services/imgstor";
 import { Message } from "utils/message";
@@ -19,6 +19,8 @@ interface Props {
 }
 
 const SettingHostingServices: React.FC<Props> = ({ imgstor }) => {
+    const notifications = useNotifications();
+    const loadingState = useLoadingState();
     const { t } = useTranslation();
     const { local, importExternal, imgur, catbox, smms } = imgstor.Settings.Config.hostingServices;
 
@@ -31,10 +33,10 @@ const SettingHostingServices: React.FC<Props> = ({ imgstor }) => {
 
         const form = new FormData(e.target as HTMLFormElement);
 
-        const saving = loadingManager.Append();
+        const saving = loadingState.Append();
         const savingMessage = new Message(Message.Type.ALERT, "saving...");
 
-        imgstorNotifications.Append(savingMessage);
+        notifications.Append(savingMessage);
         try {
             Object.assign(config.hostingServices, {
                 local: {
@@ -62,7 +64,7 @@ const SettingHostingServices: React.FC<Props> = ({ imgstor }) => {
             await imgstor.Settings.SaveConfig(config);
         }
         catch (err) {
-            imgstorNotifications.Append(new Message(Message.Type.ERROR, (err as Error).message));
+            notifications.Append(new Message(Message.Type.ERROR, (err as Error).message));
         }
         finally {
             saving.Remove();

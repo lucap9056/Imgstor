@@ -9,7 +9,6 @@ interface MessageButtonOptions {
 
 type MessageButtonEventDefinitions = {
     "Clicked": { detail: Message };
-    "ErrorOccurred": { detail: { message: string, error: Error } };
 };
 export type MessageButtonEvent<T extends keyof MessageButtonEventDefinitions> = MessageButtonEventDefinitions[T];
 
@@ -152,7 +151,6 @@ export class Message {
 
 type MessageManagerEventDefinitions = {
     "MessagesChanged": { detail: Message[] };
-    "ErrorOccurred": { detail: { message: string, error: Error } };
 };
 export type MessageManagerEvent<T extends keyof MessageManagerEventDefinitions> = MessageManagerEventDefinitions[T];
 
