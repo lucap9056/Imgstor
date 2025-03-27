@@ -10,9 +10,6 @@ import { Message } from "utils/message";
 
 import styles from "components/images/style.module.scss";
 import { useTranslation } from "react-i18next";
-
-export const BASE_WIDTH = 240;
-export const BASE_HEIGHT = 20;
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCopy } from "@fortawesome/free-solid-svg-icons";
 
@@ -27,7 +24,6 @@ const ImageComponenet: React.FC<Props> = ({ imgstor, image, onload }) => {
     const navigate = useNavigate();
     const [title, SetTitle] = useState(image.title);
     const [preview, SetPreview] = useState<string>();
-    const [style, SetStyle] = useState({});
     const [invalidImageUrl, SetInvalidImageUrl] = useState<string>();
     const hostingService = imgstor.AvailableHostingServices[image.hosting_service];
 
@@ -83,13 +79,6 @@ const ImageComponenet: React.FC<Props> = ({ imgstor, image, onload }) => {
         navigate(RoutePaths.FOCUS_VIEW + "/" + image.id);
     }
 
-    const HandleImageLoad = (e: React.UIEvent<HTMLImageElement>) => {
-        const { naturalWidth, naturalHeight } = e.currentTarget;
-
-        const gridRowEnd = `span ${Math.floor(BASE_WIDTH * (naturalHeight / naturalWidth) / BASE_HEIGHT)}`;
-        SetStyle({ gridRowEnd });
-    }
-
     const InvalidImageUrl = (): string => {
         const defaultWidth = 480;
         const defaultHeight = 160;
@@ -134,20 +123,20 @@ const ImageComponenet: React.FC<Props> = ({ imgstor, image, onload }) => {
     }
 
 
-    return <div className={styles.image} style={style} ref={ref}>
-
-        {title && <div className={styles.image_title} onClick={HandleFocusView}>
-            {ImgstorDB.DecodeText(title)}
-        </div>
-        }
+    return <div className={styles.image} ref={ref}>
 
         {preview && <>
-            <img className={styles.image_preview} alt={t("image_preview_failed")} onError={HandleImageError} src={preview} onClick={HandleFocusView} onLoad={HandleImageLoad} loading="lazy" />
+            <img className={styles.image_preview} alt={t("image_preview_failed")} onError={HandleImageError} src={preview} onClick={HandleFocusView} loading="lazy" />
 
             <div className={styles.image_copy_link} onClick={HandleCopyLink}>
                 <FontAwesomeIcon icon={faCopy} />
             </div>
         </>
+        }
+
+        {title && <div className={styles.image_title} onClick={HandleFocusView}>
+            {ImgstorDB.DecodeText(title)}
+        </div>
         }
 
     </div>
