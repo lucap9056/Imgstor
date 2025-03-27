@@ -7,10 +7,10 @@ import { ImageFile, ImageHostingService } from "services/image-hosting-services"
 import { FORMATS } from "services/converter/file-formats";
 import Converter, { FilePreview } from "services/converter";
 
-import { imgstorNotifications } from "components/notifications";
+import { useNotifications } from "components/notifications";
 
 import styles from "components/uploader/style.module.scss";
-import TranscodeLogs from "components/uploader/transcode-logs/script";
+import TranscodeLogs from "components/uploader/transcode-logs";
 
 function FilesSelecter(): Promise<File> {
     return new Promise((resolve, reject) => {
@@ -38,6 +38,7 @@ interface Props {
 }
 
 const FileSelect: React.FC<Props> = ({ fileConverter, hostingService, transcodeLogs, onchange }) => {
+    const imgstorNotifications = useNotifications();
     const { t } = useTranslation();
     const [dragActive, SetDragActive] = useState(false);
     const [selectedFile, SetSelectedFile] = useState<ImageFile>();

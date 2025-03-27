@@ -1,19 +1,17 @@
 /**
  * 畫面中央提示
  */
-import React, { useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
-import { Message, MessageManagerEvent } from "utils/message";
-
-import imgstorAlerts from './script';
+import MessageManager, { Message, MessageManagerEvent } from "utils/message";
 
 import styles from "components/alerts/style.module.scss";
 
-export {
-    imgstorAlerts
+interface Props {
+    manager: MessageManager
 }
 
-const Alerts = () => {
+const Alerts: React.FC<Props> = ({ manager }) => {
     const [alert, setAlert] = useState<Message>();
 
     useEffect(() => {
@@ -26,9 +24,9 @@ const Alerts = () => {
             }
         }
 
-        imgstorAlerts.on("MessagesChanged", AlertsChangedHandler);
+        manager.on("MessagesChanged", AlertsChangedHandler);
         return () => {
-            imgstorAlerts.off("MessagesChanged", AlertsChangedHandler);
+            manager.off("MessagesChanged", AlertsChangedHandler);
         }
     }, []);
 
@@ -59,3 +57,25 @@ class Alert extends React.Component<{ content: Message }> {
         </div>
     }
 }
+
+
+
+const AlertsContext = createContext<MessageManager | null>(null);
+
+const AlertsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const imgstorAlerts = new MessageManager();
+    return <AlertsContext.Provider value={imgstorAlerts}>{children}</AlertsContext.Provider>;
+};
+
+const useAlerts = (): MessageManager => {
+    const context = useContext(AlertsContext);
+    if (!context) {
+        throw new Error("useAlerts 必須在 AlertsProvider 內使用");
+    }
+    return context;
+};
+
+export {
+    AlertsProvider,
+    useAlerts
+};

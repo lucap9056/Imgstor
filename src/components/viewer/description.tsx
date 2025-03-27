@@ -5,9 +5,9 @@ import styles from "components/viewer/style.module.scss";
 import ImgstorDB, { ImgstorImage } from "services/imgstor-db";
 import { Message, MessageButton } from "utils/message";
 import { useTranslation } from "react-i18next";
-import { imgstorAlerts } from "components/alerts";
-import { loadingManager } from "components/loading";
-import { imgstorNotifications } from "components/notifications";
+import { useAlerts } from "components/alerts";
+import { useLoadingState } from "components/loading";
+import { useNotifications } from "components/notifications";
 import { faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
@@ -17,6 +17,9 @@ interface Props {
 }
 
 const Description: React.FC<Props> = ({ imgstorDB, image }) => {
+    const notifications = useNotifications();
+    const loadingState = useLoadingState();
+    const alerts = useAlerts();
     const { t } = useTranslation();
     const [description, SetDescription] = useState(ImgstorDB.DecodeText(image.description));
     const [edit, SetEdit] = useState(false);
@@ -36,7 +39,7 @@ const Description: React.FC<Props> = ({ imgstorDB, image }) => {
 
             const confirm = new MessageButton(t("viewer_description_change_confirm"));
             confirm.on("Clicked", () => {
-                const loading = loadingManager.Append();
+                const loading = loadingState.Append();
                 const saving = new Message(
                     Message.Type.ALERT,
                     t("viewer_description_change_confirm")
@@ -47,7 +50,7 @@ const Description: React.FC<Props> = ({ imgstorDB, image }) => {
                     imgstorDB.Save();
                 }
                 catch (err) {
-                    imgstorNotifications.Append(
+                    notifications.Append(
                         new Message(
                             Message.Type.ERROR,
                             (err as Error).message
@@ -67,7 +70,7 @@ const Description: React.FC<Props> = ({ imgstorDB, image }) => {
                 SetEdit(false);
             });
 
-            imgstorAlerts.Append(
+            alerts.Append(
                 new Message(
                     Message.Type.ALERT,
                     t("viewer_description_change_alert", { old: description, new: value }),

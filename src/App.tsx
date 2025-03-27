@@ -3,11 +3,11 @@ import { HashRouter, Routes, Route } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import "./i18n";
 
-import { Message } from "utils/message";
+import MessageManager, { Message } from "utils/message";
 
-import Notifications, { imgstorNotifications } from 'components/notifications';
-import Loading, { loadingManager } from 'components/loading';
-import Alerts, { imgstorAlerts } from 'components/alerts';
+import Notifications from 'components/notifications';
+import LoadingState from 'components/loading';
+import Alerts from 'components/alerts';
 import TagsSelecter from 'components/tags-selecter';
 import Settings from 'components/settings';
 import MainView from "components/viewer";
@@ -21,18 +21,25 @@ import Uploader from 'components/uploader';
 
 
 function App() {
+  const [notifications] = useState(new MessageManager());
+  const [loadingState] = useState<LoadingState>(new LoadingState());
+  const [alerts] = useState(new MessageManager());
+
   const { t } = useTranslation();
   const [imgstor, SetImgstor] = useState<Imgstor>();
   const [loaded, setLoaded] = useState(false);
   const [authInstance, SetAuthInstance] = useState<gapi.auth2.GoogleAuth>();
 
+
+
+
   useEffect(() => {
 
-    const loading = loadingManager.Append();
+    const loading = loadingState.Append();
 
     const loadingAlert = new Message(Message.Type.ALERT, t('app_google_api_loading'));
 
-    imgstorNotifications.Append(loadingAlert);
+    notifications.Append(loadingAlert);
 
     (async () => {
 
@@ -49,7 +56,7 @@ function App() {
           SetImgstor(undefined);
           SetAuthInstance(err.authInstance);
         } else {
-          imgstorAlerts.Append(
+          alerts.Append(
             new Message(Message.Type.ERROR, (err as Error).message)
           );
         }
@@ -75,14 +82,14 @@ function App() {
 
     setLoaded(false);
 
-    const loading = loadingManager.Append();
+    const loading = loadingState.Append();
 
     try {
       const google = await Google.SignIn(authInstance);
       const _imgstor = await Imgstor.New(google);
       SetImgstor(_imgstor);
     } catch (err) {
-      imgstorNotifications.Append(
+      notifications.Append(
         new Message(Message.Type.ERROR, t("signin_fail"))
       );
     } finally {
@@ -118,9 +125,9 @@ function App() {
         <></>
     }
 
-    <Alerts />
-    <Loading />
-    <Notifications />
+    <Alerts manager={alerts} />
+    <LoadingState.Component manager={loadingState} />
+    <Notifications manager={notifications} />
   </>;
 }
 

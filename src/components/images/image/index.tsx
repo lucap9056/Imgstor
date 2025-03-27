@@ -1,4 +1,4 @@
-import { imgstorNotifications } from "components/notifications";
+import { useNotifications } from "components/notifications";
 import React, { useEffect, useState } from "react";
 
 import { useInView } from "react-intersection-observer";
@@ -20,6 +20,7 @@ interface Props {
 }
 
 const ImageComponenet: React.FC<Props> = ({ imgstor, image, onload }) => {
+    const imgstorNotifications = useNotifications();
     const { t } = useTranslation();
     const navigate = useNavigate();
     const [title, SetTitle] = useState(image.title);

@@ -12,13 +12,12 @@ import ImportExternal from 'services/image-hosting-services/import-external';
 import { FORMATS } from 'services/converter/file-formats';
 import Converter from 'services/converter';
 
-import { imgstorNotifications } from "components/notifications";
-import { loadingManager } from "components/loading";
-import { imgstorAlerts } from 'components/alerts';
+import { useNotifications } from "components/notifications";
+import { useLoadingState } from "components/loading";
+import { useAlerts } from 'components/alerts';
 
 import { TagsSelecterEvent } from 'services/tags-selecter';
-import TranscodeLogsComponent from 'components/uploader/transcode-logs';
-import TranscodeLogs from 'components/uploader/transcode-logs/script';
+import TranscodeLogs from 'components/uploader/transcode-logs';
 
 import styles from "components/viewer/style.module.scss";
 import Title from "components/viewer/title";
@@ -31,6 +30,9 @@ interface Props {
 }
 
 const MainViewer: React.FC<Props> = ({ imgstor }) => {
+    const notifications = useNotifications();
+    const loadingState = useLoadingState();
+    const alerts = useAlerts();
     const { image_id } = useParams();
 
     if (!image_id) {
@@ -63,8 +65,6 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
 
     useEffect(() => {
 
-
-
         const TagsSelectedHandler = async (e: TagsSelecterEvent<"TagsSelected">) => {
             if (e.deteil.target !== component_id) return;
 
@@ -78,9 +78,9 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
 
             if (appendedTags.length == 0 && removedTags.length == 0) return;
 
-            const loading = loadingManager.Append();
+            const loading = loadingState.Append();
             const saving = new Message(Message.Type.ALERT, t("viewer_image_changed_saving"));
-            imgstorNotifications.Append(saving);
+            notifications.Append(saving);
             try {
                 for (const tag of appendedTags) {
                     imgstor.DB.InsertImageTag(image_id, tag.id);
@@ -93,7 +93,7 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
                 await imgstor.DB.Save();
             }
             catch (err) {
-                imgstorNotifications.Append(
+                notifications.Append(
                     new Message(
                         Message.Type.ERROR,
                         (err as Error).message
@@ -116,10 +116,10 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
     }
 
     const Delete = async () => {
-        const loading = loadingManager.Append();
+        const loading = loadingState.Append();
 
         const removing = new Message(Message.Type.NORMAL, t("viewer_deleting_notification"));
-        imgstorNotifications.Append(removing);
+        notifications.Append(removing);
 
         try {
             const hostingService = imgstor.AvailableHostingServices[image.hosting_service];
@@ -133,7 +133,7 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
             imgstor.DB.Save();
         } catch (err) {
 
-            imgstorAlerts.Append(
+            alerts.Append(
                 new Message(Message.Type.ERROR, (err as Error).message)
             );
 
@@ -155,7 +155,7 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
             navigate(RoutePaths.HOME);
         });
 
-        imgstorAlerts.Append(
+        alerts.Append(
             new Message(
                 Message.Type.ALERT,
                 t("viewer_delete_alert"),
@@ -181,7 +181,7 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
             Message.Type.NORMAL,
             t("viewer_copy_link_notification")
         );
-        imgstorNotifications.Append(
+        notifications.Append(
             copiedMessage
         );
     }
@@ -190,14 +190,14 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
         if (!image) return;
 
         if (image.file_id === "") {
-            imgstorNotifications.Append(
+            notifications.Append(
                 new Message(Message.Type.NORMAL,
                     t("viewer_file_not_stored"))
             );
             return;
         }
 
-        const loading = loadingManager.Append();
+        const loading = loadingState.Append();
         const downloading = new Message(
             Message.Type.ALERT,
             t("viewer_downloading")
@@ -212,7 +212,7 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
             URL.revokeObjectURL(a.href);
         }
         catch (err) {
-            imgstorNotifications.Append(
+            notifications.Append(
                 new Message(Message.Type.ERROR,
                     t("viewer_file_download_fail")
                 )
@@ -250,7 +250,7 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
                     [animationDetectAbort]
                 );
 
-                imgstorNotifications.Append(animationDetectMessage);
+                notifications.Append(animationDetectMessage);
                 const dynamic = await fileConverter.AnimationDetect(animationDetecting.abortController, file);
                 animationDetectMessage.Remove();
                 animationDetecting.Remove();
@@ -272,7 +272,7 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
                             "transcoding...",
                             [abort]
                         );
-                        imgstorNotifications.Append(message);
+                        notifications.Append(message);
                         messages[message.Id] = message;
 
                         const processesFile = await fileConverter.DynamicConvert(transcode.abortController, file, sourceFormat, targetFormat, logPrinter);
@@ -299,7 +299,7 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
                             "transcoding...",
                             [abort]
                         );
-                        imgstorNotifications.Append(message);
+                        notifications.Append(message);
                         messages[message.Id] = message;
                         const processesFile = await fileConverter.StaticConvert(transcode.abortController, file, targetFormat, logPrinter);
                         transcode.Done();
@@ -329,7 +329,7 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
                         [confirm]
                     );
 
-                    imgstorNotifications.Append(message);
+                    notifications.Append(message);
                 } else if (transcodeLogs.Visibled) {
                     transcodeLogs.Clear();
                 }
@@ -347,7 +347,7 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
                 confirm.on("Clicked", () => {
                     transcodeLogs.Clear();
                 });
-                imgstorNotifications.Append(
+                notifications.Append(
                     new Message(
                         Message.Type.ALERT,
                         (err as Error).message,
@@ -370,7 +370,7 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
         }
 
         if (image.file_id === "") {
-            imgstorNotifications.Append(
+            notifications.Append(
                 new Message(Message.Type.NORMAL,
                     t("viewer_file_not_stored"))
             );
@@ -410,7 +410,7 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
                 SetImage(uploadedImage);
             }
             catch (err) {
-                imgstorAlerts.Append(
+                alerts.Append(
                     new Message(
                         Message.Type.ERROR,
                         (err as Error).message
@@ -425,7 +425,7 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
          * 
          */
 
-        imgstorAlerts.Append(
+        alerts.Append(
             new Message(
                 Message.Type.ALERT,
                 t("viewer_reupload_alert"),
@@ -503,7 +503,7 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
 
 
         </div>
-        <TranscodeLogsComponent transcodeLogs={transcodeLogs} />
+        <TranscodeLogs.Component transcodeLogs={transcodeLogs} />
     </div>;
 }
 

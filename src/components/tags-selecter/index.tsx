@@ -7,10 +7,10 @@ import Imgstor from "services/imgstor";
 import { ImgstorTag } from "services/imgstor-db";
 import { TagsSelecterEvent } from "services/tags-selecter";
 
-import { imgstorNotifications } from "components/notifications";
+import { useNotifications } from "components/notifications";
 import TagItem from "components/tags-selecter/tag-item";
-import { loadingManager } from "components/loading";
-import { imgstorAlerts } from "components/alerts";
+import { useLoadingState } from "components/loading";
+import { useAlerts } from "components/alerts";
 
 
 import styles from "components/tags-selecter/style.module.scss";
@@ -26,6 +26,9 @@ interface Props {
 }
 
 const TagsSelecter: React.FC<Props> = ({ imgstor }) => {
+    const notifications = useNotifications();
+    const loadingState = useLoadingState();
+    const alerts = useAlerts();
     const { t } = useTranslation();
     const [target, SetTarget] = useState<string>();
     const [selectedTags, SetSelectedTags] = useState<ImgstorTag[]>([]);
@@ -58,14 +61,14 @@ const TagsSelecter: React.FC<Props> = ({ imgstor }) => {
                 SetTarget(undefined);
                 if (imgstor.DB.Changed) {
                     (async () => {
-                        const loading = loadingManager.Append();
+                        const loading = loadingState.Append();
                         const saving = new Message(Message.Type.NORMAL, t("saving"));
-                        imgstorNotifications.Append(saving);
+                        notifications.Append(saving);
                         try {
                             await imgstor.DB.Save();
                         }
                         catch (err) {
-                            imgstorNotifications.Append(new Message(Message.Type.ERROR, (err as Error).message));
+                            notifications.Append(new Message(Message.Type.ERROR, (err as Error).message));
                         }
                         finally {
                             saving.Remove();
@@ -113,7 +116,7 @@ const TagsSelecter: React.FC<Props> = ({ imgstor }) => {
                 confirm
             ]
         );
-        imgstorAlerts.Append(removeMessage);
+        alerts.Append(removeMessage);
     };
 
     const HandleSelectTag = ({ id }: ImgstorTag) => {

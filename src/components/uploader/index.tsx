@@ -10,12 +10,11 @@ import { ImageFile, ImageHostingService } from 'services/image-hosting-services'
 import ImportExternal from 'services/image-hosting-services/import-external';
 import Local from 'services/image-hosting-services/local';
 
-import { imgstorNotifications } from 'components/notifications';
-import { loadingManager } from 'components/loading';
-import { imgstorAlerts } from 'components/alerts';
+import { useNotifications } from 'components/notifications';
+import { useLoadingState } from 'components/loading';
+import { useAlerts } from 'components/alerts';
 import ImportExternalComponent from "components/uploader/import-external";
-import TranscodeLogsComponent from "components/uploader/transcode-logs";
-import TranscodeLogs from "components/uploader/transcode-logs/script";
+import TranscodeLogs from "components/uploader/transcode-logs";
 import FileSelect from "components/uploader/file-select";
 import TagsSelect from 'components/uploader/tags-select';
 import HostingServiceSelect from 'components/uploader/hosting-service-select';
@@ -29,6 +28,9 @@ interface Props {
 }
 
 const Uploader: React.FC<Props> = ({ imgstor }) => {
+    const notifications = useNotifications();
+    const loadingState = useLoadingState();
+    const alerts = useAlerts();
     const { t } = useTranslation();
     const [selectedFile, SetSelectedFile] = useState<ImageFile>();
     const [selectedTags, SetSelectedTags] = useState<ImgstorTag[]>([]);
@@ -59,12 +61,12 @@ const Uploader: React.FC<Props> = ({ imgstor }) => {
         }
 
         const saving = new Message(Message.Type.NORMAL, t("uploader_notification_saving"));
-        imgstorNotifications.Append(saving);
+        notifications.Append(saving);
         try {
             await imgstor.DB.Save();
         }
         catch (err) {
-            imgstorNotifications.Append(
+            notifications.Append(
                 new Message(
                     Message.Type.ERROR,
                     t("uploader_notification_save_failed")
@@ -78,7 +80,7 @@ const Uploader: React.FC<Props> = ({ imgstor }) => {
             navigate(RoutePaths.HOME);
         });
 
-        imgstorAlerts.Append(
+        alerts.Append(
             new Message(
                 Message.Type.ALERT,
                 t("uploader_notification_uploaded"),
@@ -104,7 +106,7 @@ const Uploader: React.FC<Props> = ({ imgstor }) => {
                 await imgstor.DB.Save();
             }
             catch (err) {
-                imgstorNotifications.Append(
+                notifications.Append(
                     new Message(
                         Message.Type.ERROR,
                         t("uploader_notification_save_failed")
@@ -119,7 +121,7 @@ const Uploader: React.FC<Props> = ({ imgstor }) => {
             copyLinkButton.on("Clicked", () => {
                 navigator.clipboard.writeText(image.link);
 
-                imgstorNotifications.Append(
+                notifications.Append(
                     new Message(
                         Message.Type.NORMAL,
                         t("uploader_notification_link_copied")
@@ -133,7 +135,7 @@ const Uploader: React.FC<Props> = ({ imgstor }) => {
                 navigate(RoutePaths.HOME);
             });
 
-            imgstorAlerts.Append(
+            alerts.Append(
                 new Message(
                     Message.Type.ALERT,
                     t("uploader_notification_uploaded"),
@@ -156,7 +158,7 @@ const Uploader: React.FC<Props> = ({ imgstor }) => {
             copyLinkButton.on("Clicked", () => {
                 navigator.clipboard.writeText(image.link);
 
-                imgstorNotifications.Append(
+                notifications.Append(
                     new Message(
                         Message.Type.NORMAL,
                         t("uploader_notification_link_copied")
@@ -169,7 +171,7 @@ const Uploader: React.FC<Props> = ({ imgstor }) => {
                 navigate(RoutePaths.HOME);
             });
 
-            imgstorAlerts.Append(
+            alerts.Append(
                 new Message(
                     Message.Type.ALERT,
                     t("uploader_notification_uploaded"),
@@ -186,10 +188,10 @@ const Uploader: React.FC<Props> = ({ imgstor }) => {
         }
 
 
-        const loading = loadingManager.Append();
+        const loading = loadingState.Append();
 
         const notification = new Message(Message.Type.NORMAL, t("uploader_notification_uploading"))
-        imgstorNotifications.Append(notification);
+        notifications.Append(notification);
 
 
         file.Title = (form.get("title") || "").toString();
@@ -212,7 +214,7 @@ const Uploader: React.FC<Props> = ({ imgstor }) => {
             }
         }
         catch (err) {
-            imgstorNotifications.Append(
+            notifications.Append(
                 new Message(
                     Message.Type.ERROR,
                     (err as Error).message
@@ -243,7 +245,7 @@ const Uploader: React.FC<Props> = ({ imgstor }) => {
             ConfirmUploadImage(form, selectedFile);
         })
 
-        imgstorAlerts.Append(
+        alerts.Append(
             new Message(
                 Message.Type.NORMAL,
                 t("uploader_upload_alert"),
@@ -325,7 +327,7 @@ const Uploader: React.FC<Props> = ({ imgstor }) => {
                 </div>
 
             </form>
-            <TranscodeLogsComponent transcodeLogs={transcodeLogs} />
+            <TranscodeLogs.Component transcodeLogs={transcodeLogs} />
         </div>
     </>
 }
