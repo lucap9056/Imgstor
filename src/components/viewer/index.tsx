@@ -55,6 +55,8 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
     const { t } = useTranslation();
     const component_id = useId();
     const transcodeLogs = new TranscodeLogs();
+    const [loaded, SetLoaded] = useState(false);
+    const [aspectRatio, SetAspectRatio] = useState(`${image.width}/${image.height}`);
     const [tags, SetTags] = useState<ImgstorTag[]>((image) ?
         imgstor.DB.GetImageTags(image.id, "id", "name") : []
     );
@@ -110,6 +112,13 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
             imgstor.TagsSelecter.off("TagsSelected", TagsSelectedHandler);
         }
     }, []);
+
+    const ImageLoadHandler = (e: React.UIEvent<HTMLImageElement>) => {
+        const { width, height } = e.currentTarget;
+
+        SetAspectRatio(`${width}/${height}`);
+        SetLoaded(true);
+    }
 
     const ImageError = () => {
 
@@ -452,8 +461,8 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
 
                 <Title imgstorDB={imgstor.DB} image={image} />
 
-                <div className={styles.viewer_image}>
-                    <img alt='' onError={ImageError} src={image.link} />
+                <div className={styles.viewer_image} style={{ aspectRatio }} data-loaded={loaded}>
+                    <img alt='' onError={ImageError} onLoad={ImageLoadHandler} src={image.link} />
                 </div>
 
                 <Description imgstorDB={imgstor.DB} image={image} />
