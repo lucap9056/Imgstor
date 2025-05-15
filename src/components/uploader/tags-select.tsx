@@ -41,10 +41,10 @@ const TagsSelect: React.FC<Props> = ({ imgstor, onchange }) => {
     }
 
     return <div className={styles.upload_tags} onClick={HandleSelectTags}>
-        <label>{t('uploader_selected_tags')}</label>
+        <label>{t('uplaoder.label.selected-tags')}</label>
         <div className={styles.upload_selected_tags}>
             {selectedTags.map(
-                (tag) => <div className={styles.upload_selected_tag} key={tag.id}>{tag.name}</div>
+                (tag) => <div className={styles.upload_selected_tag} key={tag.tagId}>{tag.name}</div>
             )}
         </div>
     </div>;

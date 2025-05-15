@@ -8,7 +8,7 @@
     display: flex;
 
     .settings {
-        width: 37.5rem;
+        min-width: 37.5rem;
         margin: auto;
         border-radius: 0.4375rem;
         max-width: 100vw;
@@ -24,12 +24,13 @@
         }
 
         .settings_pages {
-            width: 8.75rem;
+            min-width: 8.75rem;
             background: linear-gradient(45deg, #5a28b4 0%, #453cac 100%);
             display: flex;
             flex-flow: column;
             border-radius: 0.4375rem 0 0 0.4375rem;
             padding: 0.3125rem 0;
+            padding-right: 1rem;
 
             a {
                 color: #fff;

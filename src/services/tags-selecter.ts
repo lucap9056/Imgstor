@@ -1,5 +1,5 @@
 import EventDispatcher from "structs/event-dispatcher";
-import ImgstorDB, { ImgstorTag } from "./imgstor-db";
+import ImgstorDB, { ImgstorTag } from "services/imgstor-db";
 
 interface SelectRequest {
     target: string

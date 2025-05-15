@@ -49,14 +49,14 @@ const ImportExternalComponent: React.FC<Props> = ({ onchange }) => {
                 value={imageUrl}
                 onChange={HandleImageUrlChange}
                 onBlur={HandleBlur}
-                placeholder={t("uploader_import_image_url")}
+                placeholder={t("uploader.import.label.image-url")}
             />
             <input
                 type="text"
                 value={previewUrl}
                 onChange={HandlePreviewUrlChange}
                 onBlur={HandleBlur}
-                placeholder={imageUrl ? imageUrl : t("uploader_import_preview_url")}
+                placeholder={imageUrl ? imageUrl : t("uploader.import.label.preview-url")}
             />
         </div>
     );

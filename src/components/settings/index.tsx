@@ -7,18 +7,13 @@ import { useTranslation } from 'react-i18next';
 import { Link, Route, Routes, useNavigate } from "react-router-dom";
 
 import RoutePaths from 'route-paths/index';
-import HostingServices from "./page/hosting-services";
-
-import Imgstor from 'services/imgstor';
+import HostingServices from "components/settings/page/hosting-services";
+import Storage from "components/settings/page/storage";
 
 import styles from "components/settings/style.module.scss";
 import index_styles from "@/index.module.scss";
 
-interface Props {
-    imgstor: Imgstor
-}
-
-const SettingsComponent: React.FC<Props> = ({ imgstor }) => {
+const SettingsComponent: React.FC = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
 
@@ -31,15 +26,19 @@ const SettingsComponent: React.FC<Props> = ({ imgstor }) => {
 
             <div className={styles.settings_pages}>
                 <Link to={RoutePaths.SETTINGS + RoutePaths.SETTING_HOSTING_SERVICES}>
-                    <div className={styles.settings_pages_option}>{t("settings_page_hosting_services")}</div>
+                    <div className={styles.settings_pages_option}>{t("settings.option.hosting-service")}</div>
+                </Link>
+                <Link to={RoutePaths.SETTINGS + RoutePaths.SETTING_STORAGE}>
+                    <div className={styles.settings_pages_option}>{t("settings.option.storage")}</div>
                 </Link>
                 <div className={styles.settings_interval}></div>
-                <div className={`${styles.settings_pages_option} ${index_styles.button}`} onClick={Back}>{t("settings_back")}</div>
+                <div className={`${styles.settings_pages_option} ${index_styles.button}`} onClick={Back}>{t("main.back")}</div>
             </div>
 
             <div className={styles.settings_page_container}>
                 <Routes>
-                    <Route path={RoutePaths.SETTING_HOSTING_SERVICES} element={<HostingServices imgstor={imgstor} />}></Route>
+                    <Route path={RoutePaths.SETTING_HOSTING_SERVICES} element={<HostingServices />}></Route>
+                    <Route path={RoutePaths.SETTING_STORAGE} element={<Storage />} />
                 </Routes>
             </div>
 

@@ -3,11 +3,11 @@ import { HashRouter, Routes, Route } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import "./i18n";
 
-import MessageManager, { Message } from "utils/message";
+import { Message } from "structs/message";
 
-import Notifications from 'components/notifications';
-import LoadingState from 'components/loading';
-import Alerts from 'components/alerts';
+import Notifications, { useNotifications } from 'components/notifications';
+import LoadingState, { useLoadingState } from 'components/loading';
+import Alerts, { useAlerts } from 'components/alerts';
 import TagsSelecter from 'components/tags-selecter';
 import Settings from 'components/settings';
 import MainView from "components/viewer";
@@ -15,29 +15,29 @@ import SignIn from "components/sign-in";
 import Main from "components/main";
 
 import Google, { NotSignedInError } from 'services/google';
-import Imgstor from 'services/imgstor';
+import Imgstor, { ImgstorProvider } from 'services/imgstor';
 import RoutePaths from "route-paths/index";
 import Uploader from 'components/uploader';
 
 
 function App() {
-  const [notifications] = useState(new MessageManager());
-  const [loadingState] = useState<LoadingState>(new LoadingState());
-  const [alerts] = useState(new MessageManager());
+  const notifications = useNotifications();
+  const loadingState = useLoadingState();
+  const alerts = useAlerts();
 
   const { t } = useTranslation();
   const [imgstor, SetImgstor] = useState<Imgstor>();
   const [loaded, setLoaded] = useState(false);
   const [authInstance, SetAuthInstance] = useState<gapi.auth2.GoogleAuth>();
 
-
-
-
   useEffect(() => {
 
     const loading = loadingState.Append();
 
-    const loadingAlert = new Message(Message.Type.ALERT, t('app_google_api_loading'));
+    const loadingAlert = new Message({
+      type: Message.Type.ALERT,
+      content: t('google.loading')
+    });
 
     notifications.Append(loadingAlert);
 
@@ -57,7 +57,10 @@ function App() {
           SetAuthInstance(err.authInstance);
         } else {
           alerts.Append(
-            new Message(Message.Type.ERROR, (err as Error).message)
+            new Message({
+              type: Message.Type.ERROR,
+              content: (err as Error).message
+            })
           );
         }
 
@@ -90,8 +93,12 @@ function App() {
       SetImgstor(_imgstor);
     } catch (err) {
       notifications.Append(
-        new Message(Message.Type.ERROR, t("signin_fail"))
+        new Message({
+          type: Message.Type.ERROR,
+          content: t("google.signin.fail")
+        })
       );
+      console.error(err);
     } finally {
       setLoaded(true);
       loading.Remove();
@@ -104,20 +111,20 @@ function App() {
       loaded ? <>
         {
           imgstor ?
-            <>
+            <ImgstorProvider value={imgstor}>
               <HashRouter>
 
-                <Main key="main" imgstor={imgstor} />
+                <Main key="main" />
                 <Routes>
-                  <Route path={RoutePaths.UPLOAD} element={<Uploader imgstor={imgstor} />} />
-                  <Route path={RoutePaths.FOCUS_VIEW + "/:image_id"} element={<MainView imgstor={imgstor} />} />
-                  <Route path={RoutePaths.SETTINGS + "/*"} element={<Settings imgstor={imgstor} />} />
+                  <Route path={RoutePaths.UPLOAD} element={<Uploader />} />
+                  <Route path={RoutePaths.FOCUS_VIEW + "/:imageId"} element={<MainView />} />
+                  <Route path={RoutePaths.SETTINGS + "/*"} element={<Settings />} />
                   <Route index element={<></>} />
                 </Routes>
               </HashRouter>
 
-              <TagsSelecter imgstor={imgstor} />
-            </> :
+              <TagsSelecter />
+            </ImgstorProvider> :
             <SignIn key="signin" onSignIn={HandleSignIn} />
 
         }

@@ -5,17 +5,23 @@ interface Props {
     className: string
     tag: ImgstorTag
     ondrag: (tag: ImgstorTag) => void
+    onclick: (tag: ImgstorTag) => void
 }
 
-const TagItem: React.FC<Props> = ({ className, tag, ondrag }) => {
+const TagItem: React.FC<Props> = ({ className, tag, ondrag, onclick }) => {
 
     const HandleDrag = () => {
         ondrag(tag);
     }
 
+    const HandleClick = () => {
+        onclick(tag);
+    }
+
     return <div className={className}
         onTouchStart={HandleDrag}
         onMouseDown={HandleDrag}
+        onClick={HandleClick}
     >
         {tag.name}
     </div>;

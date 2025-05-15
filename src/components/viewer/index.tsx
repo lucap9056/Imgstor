@@ -2,10 +2,10 @@ import React, { useEffect, useId, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import { Message, MessageButton } from 'utils/message';
+import { Message, MessageButton } from 'structs/message';
 import RoutePaths from 'route-paths';
 
-import Imgstor from "services/imgstor";
+import { useImgstor } from "services/imgstor";
 import { ImgstorImage, ImgstorTag } from 'services/imgstor-db';
 import { ImageFile, ImageHostingService } from 'services/image-hosting-services';
 import ImportExternal from 'services/image-hosting-services/import-external';
@@ -25,23 +25,20 @@ import Description from "components/viewer/description";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowUpRightFromSquare, faCloudUpload, faCopy, faDownload, faLeftLong, faTrash } from '@fortawesome/free-solid-svg-icons';
 
-interface Props {
-    imgstor: Imgstor
-}
-
-const MainViewer: React.FC<Props> = ({ imgstor }) => {
+const MainViewer: React.FC = () => {
     const notifications = useNotifications();
     const loadingState = useLoadingState();
     const alerts = useAlerts();
-    const { image_id } = useParams();
+    const imgstor = useImgstor();
+    const { imageId } = useParams();
 
-    if (!image_id) {
+    if (!imageId) {
         return <></>;
     }
 
     const [image, SetImage] = useState<ImgstorImage>(
         imgstor.DB.SearchImages({
-            filters: { "id": image_id },
+            filters: { imageId },
             limit: 1
         })[0]
     );
@@ -58,11 +55,11 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
     const [loaded, SetLoaded] = useState(false);
     const [aspectRatio, SetAspectRatio] = useState(`${image.width}/${image.height}`);
     const [tags, SetTags] = useState<ImgstorTag[]>((image) ?
-        imgstor.DB.GetImageTags(image.id, "id", "name") : []
+        imgstor.DB.GetImageTags(image.imageId, "tagId", "name") : []
     );
 
     const hostingService: ImageHostingService | undefined = (image) ?
-        imgstor.AvailableHostingServices[image.hosting_service] :
+        imgstor.AvailableHostingServices[image.hostingServiceId] :
         undefined;
 
     useEffect(() => {
@@ -72,34 +69,39 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
 
             SetTags(e.deteil.tags);
 
-            const oldTagMap = new Map(e.deteil.old_tags.map((tag) => [tag.id, tag]));
-            const newTagMap = new Map(e.deteil.tags.map((tag) => [tag.id, tag]));
+            const oldTagMap = new Map(e.deteil.old_tags.map((tag) => [tag.tagId, tag]));
+            const newTagMap = new Map(e.deteil.tags.map((tag) => [tag.tagId, tag]));
 
-            const appendedTags = e.deteil.tags.filter((tag) => !oldTagMap.has(tag.id));
-            const removedTags = e.deteil.old_tags.filter((tag) => !newTagMap.has(tag.id));
+            const appendedTags = e.deteil.tags.filter((tag) => !oldTagMap.has(tag.tagId));
+            const removedTags = e.deteil.old_tags.filter((tag) => !newTagMap.has(tag.tagId));
 
             if (appendedTags.length == 0 && removedTags.length == 0) return;
 
             const loading = loadingState.Append();
-            const saving = new Message(Message.Type.ALERT, t("viewer_image_changed_saving"));
-            notifications.Append(saving);
+            const saving = notifications.Append(
+                new Message({
+                    type: Message.Type.ALERT,
+                    content: t("main.saving")
+                })
+            );
+
             try {
                 for (const tag of appendedTags) {
-                    imgstor.DB.InsertImageTag(image_id, tag.id);
+                    imgstor.DB.InsertImageTag(imageId, tag.tagId);
                 }
 
                 for (const tag of removedTags) {
-                    imgstor.DB.DeleteImageTag(image_id, tag.id);
+                    imgstor.DB.DeleteImageTag(imageId, tag.tagId);
                 }
 
                 await imgstor.DB.Save();
             }
             catch (err) {
                 notifications.Append(
-                    new Message(
-                        Message.Type.ERROR,
-                        (err as Error).message
-                    )
+                    new Message({
+                        type: Message.Type.ERROR,
+                        content: (err as Error).message
+                    })
                 );
             }
 
@@ -127,23 +129,33 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
     const Delete = async () => {
         const loading = loadingState.Append();
 
-        const removing = new Message(Message.Type.NORMAL, t("viewer_deleting_notification"));
-        notifications.Append(removing);
+        const removing = notifications.Append(
+            new Message({
+                type: Message.Type.NORMAL,
+                content: t("viewer.notifiaction.deleting")
+            })
+        );
 
         try {
-            const hostingService = imgstor.AvailableHostingServices[image.hosting_service];
+            const hostingService = imgstor.AvailableHostingServices[image.hostingServiceId];
             if (hostingService && hostingService.NAME !== ImportExternal.NAME) {
-                await hostingService.Delete(image);
+                hostingService.Delete(image);
             }
-            if (image.file_id !== "") {
+
+            if (image.fileId !== "") {
                 await imgstor.RemoveImage(image);
             }
-            imgstor.DB.DeleteImage(image.id);
-            imgstor.DB.Save();
+            imgstor.DB.DeleteImage(image.imageId);
+
+            await imgstor.DB.Save();
+
         } catch (err) {
 
             alerts.Append(
-                new Message(Message.Type.ERROR, (err as Error).message)
+                new Message({
+                    type: Message.Type.ERROR,
+                    content: (err as Error).message
+                })
             );
 
         }
@@ -156,20 +168,20 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
 
     const HandleDelete = () => {
 
-        const cancel = new MessageButton(t("viewer_delete_cancel"));
+        const cancel = new MessageButton(t("main.cancel"));
 
-        const confirm = new MessageButton(t("viewer_delete_confirm"));
+        const confirm = new MessageButton(t("main.confirm"));
         confirm.on("Clicked", async () => {
             await Delete();
             navigate(RoutePaths.HOME);
         });
 
         alerts.Append(
-            new Message(
-                Message.Type.ALERT,
-                t("viewer_delete_alert"),
-                [cancel, confirm]
-            )
+            new Message({
+                type: Message.Type.ALERT,
+                content: t("viewer.alert.delete"),
+                buttons: [cancel, confirm]
+            })
         );
 
     }
@@ -178,18 +190,18 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
         if (!image) return;
 
         const a = document.createElement("a");
-        a.href = image.link;
+        a.href = image.imageUrl;
         a.target = "_blank";
         a.click();
     }
 
     const HandleCopyLink = () => {
         if (!image) return;
-        navigator.clipboard.writeText(image.link);
-        const copiedMessage = new Message(
-            Message.Type.NORMAL,
-            t("viewer_copy_link_notification")
-        );
+        navigator.clipboard.writeText(image.imageUrl);
+        const copiedMessage = new Message({
+            type: Message.Type.NORMAL,
+            content: t("viewer.notification.link-copied")
+        });
         notifications.Append(
             copiedMessage
         );
@@ -198,19 +210,21 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
     const HandleDownload = async () => {
         if (!image) return;
 
-        if (image.file_id === "") {
+        if (image.fileId === "") {
             notifications.Append(
-                new Message(Message.Type.NORMAL,
-                    t("viewer_file_not_stored"))
+                new Message({
+                    type: Message.Type.NORMAL,
+                    content: t("viewer.notification.not-stored")
+                })
             );
             return;
         }
 
         const loading = loadingState.Append();
-        const downloading = new Message(
-            Message.Type.ALERT,
-            t("viewer_downloading")
-        );
+        const downloading = new Message({
+            type: Message.Type.ALERT,
+            content: t("viewer.alert.downloading")
+        });
         try {
             const file = await imgstor.DownloadImage(image);
             const a = document.createElement("a");
@@ -222,9 +236,10 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
         }
         catch (err) {
             notifications.Append(
-                new Message(Message.Type.ERROR,
-                    t("viewer_file_download_fail")
-                )
+                new Message({
+                    type: Message.Type.ERROR,
+                    content: t("viewer.notification.download-failed")
+                })
             );
         }
         loading.Remove();
@@ -240,27 +255,28 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
             }
 
             const fileConverter = imgstor.FileConverter;
-            const logPrinter = (msg: string) => transcodeLogs.Println(msg);
+            const LogMessage = (msg: string) => transcodeLogs.Println(msg);
 
             const messages: { [id: string]: Message } = {};
 
             try {
-                const sourceFormat = Converter.InferImageFormat(file);
+                const sourceFormat = Converter.InferFileFormat(file);
 
                 if (sourceFormat === undefined) {
                     throw new Error("invalid format");
                 }
 
                 const animationDetecting = transcodeLogs.Add();
-                const animationDetectAbort = new MessageButton("abort");
-                const animationDetectMessage = new Message(
-                    Message.Type.NORMAL,
-                    "aniation detecting...",
-                    [animationDetectAbort]
+                const animationDetectAbort = new MessageButton(t("main.abort"));
+                const animationDetectMessage = notifications.Append(
+                    new Message({
+                        type: Message.Type.NORMAL,
+                        content: t("uploader.file.notifiaction.aniation-detecting"),
+                        buttons: [animationDetectAbort]
+                    })
                 );
 
-                notifications.Append(animationDetectMessage);
-                const dynamic = await fileConverter.AnimationDetect(animationDetecting.abortController, file);
+                const dynamic = await fileConverter.DetectAnimation(animationDetecting.abortController, file, LogMessage);
                 animationDetectMessage.Remove();
                 animationDetecting.Remove();
 
@@ -268,30 +284,37 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
 
                 if (dynamic) {
 
-                    if (!hostingService.SupportedDynamicFormats.includes(sourceFormat.name)) {
-                        const targetFormatName = hostingService.SupportedDynamicFormats[0];
+                    if (!hostingService.SupportedAnimationFormats.includes(sourceFormat.name)) {
+                        const targetFormatName = hostingService.SupportedAnimationFormats[0];
                         const targetFormat = FORMATS[targetFormatName];
 
                         const transcode = transcodeLogs.Add();
 
                         const abort = new MessageButton("abort");
                         abort.on("Clicked", () => transcode.abortController.abort());
-                        const message = new Message(
-                            Message.Type.NORMAL,
-                            "transcoding...",
-                            [abort]
+                        const message = notifications.Append(
+                            new Message({
+                                type: Message.Type.NORMAL,
+                                content: t("uploader.file.notifiaction.transcoding"),
+                                buttons: [abort]
+                            })
                         );
-                        notifications.Append(message);
-                        messages[message.Id] = message;
 
-                        const processesFile = await fileConverter.DynamicConvert(transcode.abortController, file, sourceFormat, targetFormat, logPrinter);
+                        messages[message.id] = message;
+
+                        const { converted, firstFrame } = await fileConverter.ConvertAnimatedImage(transcode.abortController, file, sourceFormat, targetFormat, true, LogMessage);
                         transcode.Done();
                         message.Remove();
-                        delete messages[message.Id];
-                        if (processesFile.size === 0) {
+                        delete messages[message.id];
+                        if (converted.file.size === 0) {
                             throw new Error("fail");
                         }
-                        imageFile.SetProcessedFile(processesFile, targetFormat);
+
+                        imageFile.SetProcessedFile(converted.file, converted.fileFormat);
+
+                        if (firstFrame) {
+                            imageFile.SetPreviewFile(firstFrame.file, firstFrame.fileFormat);
+                        }
                     }
 
                 } else {
@@ -301,19 +324,21 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
                         const targetFormat = FORMATS[targetFormatName];
 
                         const transcode = transcodeLogs.Add();
-                        const abort = new MessageButton("abort");
+                        const abort = new MessageButton(t("main.abort"));
                         abort.on("Clicked", () => transcode.abortController.abort());
-                        const message = new Message(
-                            Message.Type.NORMAL,
-                            "transcoding...",
-                            [abort]
+                        const message = notifications.Append(
+                            new Message({
+                                type: Message.Type.NORMAL,
+                                content: t("uploader.file.notifiaction.transcoding"),
+                                buttons: [abort]
+                            })
                         );
-                        notifications.Append(message);
-                        messages[message.Id] = message;
-                        const processesFile = await fileConverter.StaticConvert(transcode.abortController, file, targetFormat, logPrinter);
+
+                        messages[message.id] = message;
+                        const processesFile = await fileConverter.ConvertStaticImage(transcode.abortController, file, targetFormat, LogMessage);
                         transcode.Done();
                         message.Remove();
-                        delete messages[message.Id];
+                        delete messages[message.id];
                         if (processesFile.size === 0) {
                             throw new Error("fail");
                         }
@@ -322,23 +347,23 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
 
                 }
 
-                if (imageFile.Processed) {
-                    const originalSize = Converter.FileSizeFormat(imageFile.Original.file.size);
-                    const processedSize = Converter.FileSizeFormat(imageFile.Processed.file.size);
+                if (imageFile.processed) {
+                    const originalSize = Converter.InferFileFormat(imageFile.original.file);
+                    const processedSize = Converter.InferFileFormat(imageFile.processed.file);
 
-                    const confirm = new MessageButton("confirm");
+                    const confirm = new MessageButton(t("main.confirm"));
 
                     confirm.on("Clicked", () => {
                         transcodeLogs.Clear();
                     });
 
-                    const message = new Message(
-                        Message.Type.NORMAL,
-                        t("uploader_file_converted_size_notification", { originalSize, processedSize }),
-                        [confirm]
+                    notifications.Append(
+                        new Message({
+                            type: Message.Type.NORMAL,
+                            content: t("uploader.file.notifiaction.converted-size", { originalSize, processedSize }),
+                            buttons: [confirm]
+                        })
                     );
-
-                    notifications.Append(message);
                 } else if (transcodeLogs.Visibled) {
                     transcodeLogs.Clear();
                 }
@@ -346,22 +371,22 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
                 resolve(imageFile);
 
             } catch (err) {
-                logPrinter((err as Error).message);
+                LogMessage((err as Error).message);
                 Object.keys(messages).forEach((id) => {
                     messages[id].Remove();
                     delete messages[id];
                 });
 
-                const confirm = new MessageButton("confirm");
+                const confirm = new MessageButton(t("main.confirm"));
                 confirm.on("Clicked", () => {
                     transcodeLogs.Clear();
                 });
                 notifications.Append(
-                    new Message(
-                        Message.Type.ALERT,
-                        (err as Error).message,
-                        [confirm]
-                    )
+                    new Message({
+                        type: Message.Type.ALERT,
+                        content: (err as Error).message,
+                        buttons: [confirm]
+                    })
                 );
 
                 reject(err);
@@ -374,19 +399,21 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
     const HandleReupload = () => {
         if (!image) return;
 
-        if (hostingService === undefined || !hostingService.enabled) {
+        if (hostingService === undefined || !hostingService.isEnabled) {
             return;
         }
 
-        if (image.file_id === "") {
+        if (image.fileId === "") {
             notifications.Append(
-                new Message(Message.Type.NORMAL,
-                    t("viewer_file_not_stored"))
+                new Message({
+                    type: Message.Type.NORMAL,
+                    content: t("viewer.notification.not-stored")
+                })
             );
             return;
         }
 
-        const confirm = new MessageButton(t("viewer_reupload_confirm"));
+        const confirm = new MessageButton(t("main.confirm"));
         confirm.on("Clicked", async () => {
 
             if (!hostingService) {
@@ -402,28 +429,26 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
 
                 const convertedFile = await FileConvert(file);
 
-                convertedFile.Title = image.title;
-                convertedFile.Description = image.description;
+                convertedFile.title = image.title;
+                convertedFile.description = image.description;
 
                 const uploadedImage = await hostingService.Upload(true, convertedFile);
 
-
-                Object.assign(uploadedImage, {
-                    id: image.id,
-                    file_id: image.file_id
+                imgstor.DB.UpdateImage({
+                    ...uploadedImage,
+                    imageId: image.imageId,
+                    fileId: image.fileId
                 });
-
-                imgstor.DB.UpdateImage(uploadedImage);
                 await imgstor.DB.Save();
 
                 SetImage(uploadedImage);
             }
             catch (err) {
                 alerts.Append(
-                    new Message(
-                        Message.Type.ERROR,
-                        (err as Error).message
-                    )
+                    new Message({
+                        type: Message.Type.ERROR,
+                        content: (err as Error).message
+                    })
                 );
             }
 
@@ -435,14 +460,14 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
          */
 
         alerts.Append(
-            new Message(
-                Message.Type.ALERT,
-                t("viewer_reupload_alert"),
-                [
-                    new MessageButton(t("viewer_reupload_cancel")),
+            new Message({
+                type: Message.Type.ALERT,
+                content: t("viewer.alert.reupload"),
+                buttons: [
+                    new MessageButton(t("main.cancel")),
                     confirm
                 ]
-            )
+            })
         );
 
     }
@@ -459,19 +484,19 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
         <div className={styles.viewer}>
             <div className={styles.viewer_main}>
 
-                <Title imgstorDB={imgstor.DB} image={image} />
+                <Title image={image} />
 
                 <div className={styles.viewer_image} style={{ aspectRatio }} data-loaded={loaded}>
-                    <img alt='' onError={ImageError} onLoad={ImageLoadHandler} src={image.link} />
+                    <img alt='' onError={ImageError} onLoad={ImageLoadHandler} src={image.imageUrl} />
                 </div>
 
-                <Description imgstorDB={imgstor.DB} image={image} />
+                <Description image={image} />
 
-                <div className={styles.viewer_image_tags} data-text={t("viewer_image_tags")} onClick={HandleSelectTags}>
+                <div className={styles.viewer_image_tags} data-text={t("viewer.label.tags")} onClick={HandleSelectTags}>
                     {tags.map(
                         (tag) => <div
                             className={styles.viewer_image_tag}
-                            key={tag.id}
+                            key={tag.tagId}
                         >
                             {tag.name}
                         </div>
@@ -482,30 +507,30 @@ const MainViewer: React.FC<Props> = ({ imgstor }) => {
 
 
             <div className={styles.viewer_options}>
-                <li className={styles.viewer_option} onClick={HandleDelete} data-text={t("viewer_delete")}>
+                <li className={styles.viewer_option} onClick={HandleDelete} data-text={t("viewer.option.delete")}>
                     <FontAwesomeIcon icon={faTrash} />
                 </li>
-                <li className={styles.viewer_option} onClick={HandleOpen} data-text={t("viewer_open")}>
+                <li className={styles.viewer_option} onClick={HandleOpen} data-text={t("viewer.option.open")}>
                     <FontAwesomeIcon icon={faArrowUpRightFromSquare} />
                 </li>
-                <li className={styles.viewer_option} onClick={HandleCopyLink} data-text={t("viewer_copy_link")}>
+                <li className={styles.viewer_option} onClick={HandleCopyLink} data-text={t("viewer.option.copy-link")}>
                     <FontAwesomeIcon icon={faCopy} />
                 </li>
 
-                {image.file_id !== "" ? <>
-                    <li className={styles.viewer_option} onClick={HandleDownload} data-text={t("viewer_download")}>
+                {image.fileId !== "" ? <>
+                    <li className={styles.viewer_option} onClick={HandleDownload} data-text={t("viewer.option.download")}>
                         <FontAwesomeIcon icon={faDownload} />
                     </li>
 
-                    {hostingService !== undefined && hostingService.enabled ?
-                        <li className={styles.viewer_option} onClick={HandleReupload} data-text={t("viewer_reupload")}>
+                    {hostingService !== undefined && hostingService.isEnabled ?
+                        <li className={styles.viewer_option} onClick={HandleReupload} data-text={t("viewer.option.reupload")}>
                             <FontAwesomeIcon icon={faCloudUpload} />
                         </li> : null
                     }
 
                 </> : null}
 
-                <li className={styles.viewer_option} onClick={HandleBack} data-text={t("viewer_back")}>
+                <li className={styles.viewer_option} onClick={HandleBack} data-text={t("viewer.option.back")}>
                     <FontAwesomeIcon icon={faLeftLong} />
                 </li>
             </div>

@@ -29,13 +29,16 @@
 
         .notification_button {
             position: relative;
-            background-color: transparent;
+            background-color: #4a3f7c;
             color: white;
             border: none;
             cursor: pointer;
             width: auto;
             height: 1.5rem;
             line-height: 1.5rem;
+
+            border-radius: 4px;
+            margin-left: 0.25rem;
 
             &::before,
             &::after {
@@ -63,6 +66,7 @@
         &:hover {
             .notification_button {
                 .notification_button {
+
                     &::before,
                     &::after {
                         background-color: #ad9cff;

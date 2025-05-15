@@ -3,7 +3,7 @@
  */
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-import MessageManager, { Message, MessageManagerEvent } from "utils/message";
+import MessageManager, { Message, MessageManagerEvent } from "structs/message";
 
 import styles from "components/notifications/style.module.scss";
 
@@ -18,9 +18,7 @@ const Notifications: React.FC<Props> = ({ manager }) => {
     useEffect(() => {
 
         function NotificationsChangedHandler(e: MessageManagerEvent<"MessagesChanged">) {
-
             setNotifications([...e.detail]);
-
         }
 
         manager.on("MessagesChanged", NotificationsChangedHandler);
@@ -33,13 +31,13 @@ const Notifications: React.FC<Props> = ({ manager }) => {
         return <div className={styles.notifications}>
             {notifications.map(
 
-                (content) => <li className={styles.notification} key={content.Id} data-type={content.Type}>
-                    <p className={styles.notification_message}>{content.Text}</p>
-                    {content.Buttons.map(
-                        (button, i) => <button key={content.Id + i} className={styles.notification_button}
-                            data-id={content.Id || ""}
+                (notification) => <li className={styles.notification} key={notification.id} data-type={notification.type}>
+                    <p className={styles.notification_message}>{notification.content}</p>
+                    {notification.buttons.map(
+                        (button, i) => <button key={notification.id + i} className={styles.notification_button}
+                            data-id={notification.id || ""}
                             onClick={button.Click}>
-                            {button.Text}
+                            {button.text}
                         </button>
                     )}
                 </li>
@@ -63,7 +61,7 @@ const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 const useNotifications = (): MessageManager => {
     const context = useContext(NotificationsContext);
     if (!context) {
-        throw new Error("useNotifications 必須在 NotificationsProvider 內使用");
+        throw new Error("useNotifications must be used within an NotificationsProvider.");
     }
     return context;
 };

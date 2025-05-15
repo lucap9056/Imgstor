@@ -2,31 +2,39 @@ import { merge } from "lodash";
 import EventDispatcher from "structs/event-dispatcher";
 import { Drive } from "services/google";
 
+export interface HostingServicesConfig {
+    version: number,
+    local: {
+        isEnabled: boolean
+    },
+    importExternal: {
+        isEnabled: boolean
+    },
+    imgur: {
+        isEnabled: boolean
+        clientId: string
+    },
+    catbox: {
+        isEnabled: boolean
+        proxy: string
+        userhash: string
+        separatePreviewUpload: boolean
+    },
+    smms: {
+        isEnabled: boolean
+        proxy: string
+        token: string
+        separatePreviewUpload: boolean
+    }
+}
+
 export interface ImgstorConfig {
     fileId: string
     version: number
-    hostingServices: {
-        local: {
-            enabled: boolean
-        },
-        importExternal: {
-            enabled: boolean
-        },
-        imgur: {
-            enabled: boolean
-            clientId: string
-        },
-        catbox: {
-            enabled: boolean
-            proxy: string
-            userhash: string
-        },
-        smms: {
-            enabled: boolean
-            proxy: string
-            token: string
-        }
+    database: {
+        version: number
     }
+    hostingServices: HostingServicesConfig
 }
 
 const enum ConfigFile {
@@ -43,29 +51,39 @@ export type SettingsEvent<T extends keyof SettingsEventDefinitions> = SettingsEv
 
 export default class Settings extends EventDispatcher<SettingsEventDefinitions> {
 
+    public static readonly VERSION = 1;
+    public static readonly DATABASE_VERSION = 1;
+    public static readonly HOSTING_SERVICE_VERSION = 1;
+
     public static readonly DefaultConfig: ImgstorConfig = {
         fileId: "",
-        version: 1,
+        version: Settings.VERSION,
+        database: {
+            version: Settings.DATABASE_VERSION
+        },
         hostingServices: {
+            version: Settings.HOSTING_SERVICE_VERSION,
             local: {
-                enabled: false,
+                isEnabled: false,
             },
             importExternal: {
-                enabled: true,
+                isEnabled: true,
             },
             imgur: {
-                enabled: false,
+                isEnabled: false,
                 clientId: ""
             },
             catbox: {
-                enabled: false,
+                isEnabled: false,
                 proxy: "",
-                userhash: ""
+                userhash: "",
+                separatePreviewUpload: true
             },
             smms: {
-                enabled: false,
+                isEnabled: false,
                 proxy: "",
-                token: ""
+                token: "",
+                separatePreviewUpload: true
             }
         }
     }

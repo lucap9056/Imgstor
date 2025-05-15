@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import Imgstor from 'services/imgstor';
+import { useImgstor } from 'services/imgstor';
 import { useNavigate } from 'react-router-dom';
 import RoutePaths from "route-paths";
 
@@ -12,12 +12,9 @@ import styles from "components/menu/style.module.scss";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars } from '@fortawesome/free-solid-svg-icons';
 
-interface Props {
-    imgstor: Imgstor
-}
-
-const Menu: React.FC<Props> = ({ imgstor }) => {
+const Menu: React.FC = () => {
     const { t } = useTranslation();
+    const imgstor = useImgstor();
     const [display, SetDisplay] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
@@ -54,8 +51,8 @@ const Menu: React.FC<Props> = ({ imgstor }) => {
         {
             display ?
                 <div className={styles.menu_options}>
-                    <li className={styles.menu_option} onClick={HandleSettingsDisplay}>{t('menu_settings')}</li>
-                    <li className={styles.menu_option} onClick={HandleImgstorSignOut}>{t('menu_signout')}</li>
+                    <li className={styles.menu_option} onClick={HandleSettingsDisplay}>{t('menu.settings')}</li>
+                    <li className={styles.menu_option} onClick={HandleImgstorSignOut}>{t('menu.signout')}</li>
                 </div>
                 : <></>
         }

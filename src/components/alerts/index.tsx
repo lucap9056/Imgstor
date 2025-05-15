@@ -3,7 +3,7 @@
  */
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-import MessageManager, { Message, MessageManagerEvent } from "utils/message";
+import MessageManager, { Message, MessageManagerEvent } from "structs/message";
 
 import styles from "components/alerts/style.module.scss";
 
@@ -32,33 +32,24 @@ const Alerts: React.FC<Props> = ({ manager }) => {
 
     if (!alert) return <></>;
 
-    return <Alert key={alert.Id} content={alert} />;
+    return <Alert key={alert.id} content={alert} />;
 }
 
 export default Alerts;
 
-class Alert extends React.Component<{ content: Message }> {
-    constructor(props: { content: Message }) {
-        super(props);
-    }
-
-    render(): React.ReactNode {
-        const { content } = this.props;
-        return <div className={styles.alert_container}>
-            <div className={styles.alert} data-type={content.Type}>
-                <p className={styles.alert_message}>{content.Text}</p>
-                {content.Buttons.map(
-                    (button, i) => <button key={content.Id + i} className={styles.alert_button}
-                        onClick={button.Click}>
-                        {button.Text}
-                    </button>
-                )}
-            </div>
+const Alert: React.FC<{ content: Message }> = ({ content }) => {
+    return <div className={styles.alert_container}>
+        <div className={styles.alert} data-type={content.type}>
+            <div className={styles.alert_message}>{content.content}</div>
+            {content.buttons.map(
+                (button, i) => <button key={content.id + i} className={styles.alert_button}
+                    onClick={button.Click}>
+                    {button.text}
+                </button>
+            )}
         </div>
-    }
+    </div>
 }
-
-
 
 const AlertsContext = createContext<MessageManager | null>(null);
 
@@ -70,7 +61,7 @@ const AlertsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
 const useAlerts = (): MessageManager => {
     const context = useContext(AlertsContext);
     if (!context) {
-        throw new Error("useAlerts 必須在 AlertsProvider 內使用");
+        throw new Error("useAlerts must be used within an AlertsProvider.");
     }
     return context;
 };

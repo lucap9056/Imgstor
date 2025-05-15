@@ -35,6 +35,7 @@
             font-size: 1.75rem;
             color: white;
             border: none;
+            transition-duration: 125ms;
 
             &:before {
                 content: attr(data-text);

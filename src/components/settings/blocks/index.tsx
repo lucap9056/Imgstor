@@ -1,4 +1,4 @@
-import React, { ReactNode, useRef, useState } from "react";
+import React, { ReactNode, useEffect, useRef, useState } from "react";
 
 import styles from "components/settings/blocks/style.module.scss";
 
@@ -9,17 +9,21 @@ interface Props {
 }
 
 const SettingBlock: React.FC<Props> = (props) => {
-    const [visible, SetVisible] = useState(props.visible || false);
+    const [visible, SetVisible] = useState<boolean>(props.visible !== undefined ? props.visible : true);
     const [style, SetStyle] = useState<React.CSSProperties>({});
     const { title, children } = props;
     const content = useRef<HTMLDivElement>(null);
-    const HandleVisible = () => {
-        if (visible) {
-            SetStyle({});
-        } else if (content.current) {
-            const height = content.current.scrollHeight;
+
+    useEffect(() => {
+        if (visible && content.current) {
+            const height = content.current.scrollHeight + 5;
             SetStyle({ height });
+        } else {
+            SetStyle({});
         }
+    }, [visible]);
+
+    const HandleVisible = () => {
         SetVisible(!visible);
     }
 

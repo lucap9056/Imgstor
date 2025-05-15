@@ -3,24 +3,25 @@ import React, { useState } from "react";
 
 import styles from "components/viewer/style.module.scss";
 import ImgstorDB, { ImgstorImage } from "services/imgstor-db";
-import { Message, MessageButton } from "utils/message";
+import { Message, MessageButton } from "structs/message";
 import { useTranslation } from "react-i18next";
 import { useAlerts } from "components/alerts";
 import { useLoadingState } from "components/loading";
 import { useNotifications } from "components/notifications";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPenToSquare } from "@fortawesome/free-solid-svg-icons";
+import { useImgstor } from "services/imgstor";
 
 interface Props {
-    imgstorDB: ImgstorDB
     image: ImgstorImage
 }
 
-const Title: React.FC<Props> = ({ imgstorDB, image }) => {
+const Title: React.FC<Props> = ({ image }) => {
     const notifications = useNotifications();
     const loadingState = useLoadingState();
     const alerts = useAlerts();
     const { t } = useTranslation();
+    const imgstorDB = useImgstor().DB;
     const [title, SetTitle] = useState(ImgstorDB.DecodeText(image.title));
     const [edit, SetEdit] = useState(false);
 
@@ -34,12 +35,14 @@ const Title: React.FC<Props> = ({ imgstorDB, image }) => {
                 return;
             }
 
-            const confirm = new MessageButton(t("viewer_title_change_confirm"));
+            const confirm = new MessageButton(t("main.confirm"));
             confirm.on("Clicked", () => {
                 const loading = loadingState.Append();
-                const saving = new Message(
-                    Message.Type.ALERT,
-                    t("viewer_title_change_confirm")
+                const saving = notifications.Append(
+                    new Message({
+                        type: Message.Type.ALERT,
+                        content: t("main.saving")
+                    })
                 );
 
                 try {
@@ -48,10 +51,10 @@ const Title: React.FC<Props> = ({ imgstorDB, image }) => {
                 }
                 catch (err) {
                     notifications.Append(
-                        new Message(
-                            Message.Type.ERROR,
-                            (err as Error).message
-                        )
+                        new Message({
+                            type: Message.Type.ERROR,
+                            content: (err as Error).message
+                        })
                     );
                 }
 
@@ -62,17 +65,17 @@ const Title: React.FC<Props> = ({ imgstorDB, image }) => {
                 loading.Remove();
             });
 
-            const cancel = new MessageButton(t("viewer_title_change_cancel"));
+            const cancel = new MessageButton(t("main.cancel"));
             cancel.on("Clicked", () => {
                 SetEdit(false);
             });
 
             alerts.Append(
-                new Message(
-                    Message.Type.ALERT,
-                    t("viewer_title_change_alert", { old: title, new: value }),
-                    [cancel, confirm]
-                )
+                new Message({
+                    type: Message.Type.ALERT,
+                    content: t("viewer.alert.change-title", { old: title, new: value }),
+                    buttons: [cancel, confirm]
+                })
             );
         }
 

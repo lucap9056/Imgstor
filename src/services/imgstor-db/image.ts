@@ -2,42 +2,63 @@ import { Database } from "sql.js";
 import HostingService from "services/imgstor-db/hosting-service";
 
 export interface ImgstorImage {
-    id: string
+    imageId: string
     name: string
-    type: string
+    mimeType: string
 
     width: string
     height: string
 
-    hosting_service: string //ImgstorHostingService id
-    link: string
-    del: string
-    preview: string
+    hostingServiceId: string
+    imageUrl: string
+    deleteImageUrl: string
+    previewUrl: string
+    deletePreviewUrl: string
 
     title: string
     description: string
 
-    create_time: string
-    file_id: string
+    createTime: string
+    fileId: string
 }
+
+const COLUMNS: { [K in keyof ImgstorImage]: K } = {
+    imageId: "imageId",
+    name: "name",
+    mimeType: "mimeType",
+    width: "width",
+    height: "height",
+    hostingServiceId: "hostingServiceId",
+    imageUrl: "imageUrl",
+    deleteImageUrl: "deleteImageUrl",
+    previewUrl: "previewUrl",
+    deletePreviewUrl: "deletePreviewUrl",
+    title: "title",
+    description: "description",
+    createTime: "createTime",
+    fileId: "fileId",
+};
 
 export type ImgstorImageSort = "default" | "newest" | "oldest";
 
 export class ImgstorImage {
     private static readonly empty: ImgstorImage = {
-        id: "",
+        imageId: "",
         name: "",
-        type: "",
+        mimeType: "",
         width: "0",
         height: "0",
-        hosting_service: "",
-        link: "",
-        del: "",
-        preview: "",
+        hostingServiceId: "",
+        imageUrl: "",
+        deleteImageUrl: "",
+        previewUrl: "",
+        deletePreviewUrl: "",
+
         title: "",
         description: "",
-        create_time: "",
-        file_id: ""
+
+        createTime: "",
+        fileId: "",
     }
 
     public static get Empty(): ImgstorImage {
@@ -54,21 +75,22 @@ export class ImgstorImage {
 
 const TABLE_NAME = "Image";
 const CERATE_CMD = `
-CREATE TABLE Image (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    type TEXT NOT NULL,
-    width TEXT NOT NULL,
-    height TEXT NOT NULL,
-    hosting_service INTEGER NOT NULL,
-    link TEXT NOT NULL,
-    del TEXT NOT NULL,
-    preview TEXT NOT NULL,
-    title TEXT,
-    description TEXT,
-    create_time INTEGER NOT NULL,
-    file_id TEXT NOT NULL,
-    FOREIGN KEY (hosting_service) REFERENCES ${HostingService.TABLE_NAME}(id)
+CREATE TABLE ${TABLE_NAME} (
+    ${COLUMNS.imageId} INTEGER PRIMARY KEY AUTOINCREMENT,
+    ${COLUMNS.name} TEXT NOT NULL,
+    ${COLUMNS.mimeType} TEXT NOT NULL,
+    ${COLUMNS.width} TEXT NOT NULL,
+    ${COLUMNS.height} TEXT NOT NULL,
+    ${COLUMNS.hostingServiceId} INTEGER NOT NULL,
+    ${COLUMNS.imageUrl} TEXT NOT NULL,
+    ${COLUMNS.deleteImageUrl} TEXT NOT NULL,
+    ${COLUMNS.previewUrl} TEXT NOT NULL,
+    ${COLUMNS.deletePreviewUrl} TEXT NOT NULL,
+    ${COLUMNS.title} TEXT,
+    ${COLUMNS.description} TEXT,
+    ${COLUMNS.createTime} INTEGER NOT NULL,
+    ${COLUMNS.fileId} TEXT NOT NULL,
+    FOREIGN KEY (${COLUMNS.hostingServiceId}) REFERENCES ${HostingService.TABLE_NAME}(${HostingService.COLUMNS.id})
 );
 `;
 
@@ -98,26 +120,87 @@ function Get(db: Database, ...include: (keyof ImgstorImage)[]): ImgstorImage[] {
 }
 
 function Insert(db: Database, image: ImgstorImage): void {
-    const { name, type, width, height, hosting_service, link, del, preview, title, description, create_time, file_id } = image;
+    const {
+        name,
+        mimeType,
+        width,
+        height,
+        hostingServiceId,
+        imageUrl,
+        deleteImageUrl,
+        previewUrl,
+        deletePreviewUrl,
+        title,
+        description,
+        createTime,
+        fileId
+    } = image;
 
-    const columns = "name, type, width, height, hosting_service, link, del, preview, title, description, create_time, file_id";
-    const stmt = db.prepare(`INSERT INTO ${TABLE_NAME}(${columns}) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`)
-    stmt.run([name, type, width, height, hosting_service, link, del, preview, title, description, create_time, file_id]);
+    const columns: (keyof ImgstorImage)[] = [
+        COLUMNS.name,
+        COLUMNS.mimeType,
+        COLUMNS.width,
+        COLUMNS.height,
+        COLUMNS.hostingServiceId,
+        COLUMNS.imageUrl,
+        COLUMNS.deleteImageUrl,
+        COLUMNS.previewUrl,
+        COLUMNS.deletePreviewUrl,
+        COLUMNS.title,
+        COLUMNS.description,
+        COLUMNS.createTime,
+        COLUMNS.fileId
+    ];
+
+    const columnsToInsert = columns.join(",");
+    const stmt = db.prepare(`INSERT INTO ${TABLE_NAME}(${columnsToInsert}) VALUES(${columns.map(_ => '?').join(",")})`)
+    stmt.run([name, mimeType, width, height, hostingServiceId, imageUrl, deleteImageUrl, previewUrl, deletePreviewUrl, title, description, createTime, fileId]);
     stmt.free();
 }
 
 function Update(db: Database, image: ImgstorImage): void {
-    const { name, type, width, height, hosting_service, link, del, preview, title, description, create_time, file_id, id } = image;
-    
-    const columnsToUpdate = "name = ?, type = ?, width = ?, height = ?, hosting_service = ?, link = ?, del = ?, preview = ?, title = ?, description = ?, create_time = ?, file_id = ?";
-    const stmt = db.prepare(`UPDATE ${TABLE_NAME} SET ${columnsToUpdate} WHERE id = ?`);
-    
-    stmt.run([name, type, width, height, hosting_service, link, del, preview, title, description, create_time, file_id, id]);
+    const {
+        imageId,
+        name,
+        mimeType,
+        width,
+        height,
+        hostingServiceId,
+        imageUrl,
+        deleteImageUrl,
+        previewUrl,
+        deletePreviewUrl,
+        title,
+        description,
+        createTime,
+        fileId
+    } = image;
+
+    const columns: (keyof ImgstorImage)[] = [
+        COLUMNS.name,
+        COLUMNS.mimeType,
+        COLUMNS.width,
+        COLUMNS.height,
+        COLUMNS.hostingServiceId,
+        COLUMNS.imageUrl,
+        COLUMNS.deleteImageUrl,
+        COLUMNS.previewUrl,
+        COLUMNS.deletePreviewUrl,
+        COLUMNS.title,
+        COLUMNS.description,
+        COLUMNS.createTime,
+        COLUMNS.fileId
+    ];
+
+    const columnsToUpdate = columns.map(c => c + "=?").join(',');
+    const stmt = db.prepare(`UPDATE ${TABLE_NAME} SET ${columnsToUpdate} WHERE ${COLUMNS.imageId}=?`);
+
+    stmt.run([name, mimeType, width, height, hostingServiceId, imageUrl, deleteImageUrl, previewUrl, deletePreviewUrl, title, description, createTime, fileId, imageId]);
     stmt.free();
 }
 
 function Delete(db: Database, id: string): void {
-    const stmt = db.prepare(`DELETE FROM ${TABLE_NAME} WHERE id=?`);
+    const stmt = db.prepare(`DELETE FROM ${TABLE_NAME} WHERE ${COLUMNS.imageId}=?`);
     stmt.run([id]);
     stmt.free();
 }
@@ -129,4 +212,5 @@ export default {
     Delete,
     TABLE_NAME,
     CERATE_CMD,
+    COLUMNS
 }

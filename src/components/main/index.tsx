@@ -13,7 +13,7 @@ import Images from 'components/images';
 import Menu from 'components/menu';
 
 import { ImgstorImage, ImgstorImageSort as Sort } from "services/imgstor-db";
-import Imgstor, { SearchContent } from 'services/imgstor';
+import { SearchContent, useImgstor } from 'services/imgstor';
 
 
 import styles from "components/main/style.module.scss";
@@ -24,12 +24,9 @@ const enum MOBILE_MODE {
     SEARCH = 2,
 }
 
-interface Props {
-    imgstor: Imgstor
-}
-
-const Main: React.FC<Props> = ({ imgstor }) => {
+const Main: React.FC = () => {
     const navigate = useNavigate();
+    const imgstor = useImgstor();
     const [searchContent, SetSearchContent] = useState<SearchContent>();
 
     const defaultSort = cookies.get("sort") as Sort || ImgstorImage.SORT.DEFAULT;
@@ -89,7 +86,7 @@ const Main: React.FC<Props> = ({ imgstor }) => {
                     <FontAwesomeIcon icon={faCloudArrowUp} />
                 </button>
                 <div className={styles.main_mobile_header_button}>
-                    <Menu imgstor={imgstor} />
+                    <Menu />
                 </div>
             </div>
 
@@ -101,7 +98,7 @@ const Main: React.FC<Props> = ({ imgstor }) => {
                 }
                 {
                     mobileMode === MOBILE_MODE.SEARCH &&
-                    <Search imgstor={imgstor} onchange={HandleSearchChanged} />
+                    <Search onchange={HandleSearchChanged} />
                 }
 
             </div>
@@ -113,17 +110,17 @@ const Main: React.FC<Props> = ({ imgstor }) => {
                 <ImagesSortSelector defaultValue={defaultSort} onchange={HandleSortChanged} />
             </div>
             <div className={styles.main_desktop_header_center}>
-                <Search imgstor={imgstor} onchange={HandleSearchChanged} />
+                <Search onchange={HandleSearchChanged} />
             </div>
             <div className={styles.main_desktop_header_right}>
                 <button className={styles.main_desktop_header_right_button} onClick={HandleUpload}>
                     <FontAwesomeIcon icon={faCloudArrowUp} />
                 </button>
-                <Menu imgstor={imgstor} />
+                <Menu />
             </div>
         </div>
 
-        <Images imgstor={imgstor} />
+        <Images />
     </>
 }
 

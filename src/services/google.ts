@@ -27,16 +27,20 @@ export default class Google extends EventDispatcher<GoogleEventDefinitions> {
 
     public static New = async function (): Promise<Google> {
         const config = {
-            apiKey: Google.k,
             clientId: Google.c,
             discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
-            scope: "https://www.googleapis.com/auth/drive"
+            scope: "https://www.googleapis.com/auth/drive.appdata"
         };
 
         return new Promise((resolve, reject) => {
             gapi.load('client:auth2', () => {
                 gapi.client.init(config).then(() => {
 
+                    if (!Google.k) {
+                        return reject(new Error("Google api key is empty"));
+                    }
+
+                    gapi.client.setApiKey(Google.k);
                     const authInstance = gapi.auth2.getAuthInstance();
 
                     const signedIn = authInstance.isSignedIn.get();
@@ -126,9 +130,10 @@ export class Drive {
             throw new Error("APP_NAME cannot be empty.");
         }
 
-        const q = `'root' in parents and name = '${Drive.AppName}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
+        const q = `'appDataFolder' in parents and name = '${Drive.AppName}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
 
         const files: gapi.client.drive.File[] | undefined = await gapi.client.drive.files.list({
+            spaces: 'appDataFolder',
             pageSize: 10,
             fields: 'nextPageToken, files(id, name, mimeType, parents, webViewLink, iconLink)',
             q: q
@@ -139,9 +144,10 @@ export class Drive {
             const root: gapi.client.drive.File = await gapi.client.drive.files.create({
                 resource: {
                     name: Drive.AppName,
-                    mimeType: 'application/vnd.google-apps.folder'
+                    mimeType: 'application/vnd.google-apps.folder',
+                    parents: ['appDataFolder']
                 },
-                fields: "id, name, mimeType, parents, webViewLink, iconLink"
+                fields: "id, name, mimeType, parents, webViewLink, iconLink",
             }).then((res) => res.result);
 
             return new Drive(root);
@@ -175,6 +181,7 @@ export class Drive {
 
         try {
             const response = await gapi.client.drive.files.list({
+                spaces: 'appDataFolder',
                 pageSize: 10,
                 fields: 'nextPageToken, files(id, name, mimeType, parents, webViewLink, iconLink)',
                 q: q,
@@ -239,6 +246,33 @@ export class Drive {
 
     public async DeleteFile(fileId: string): Promise<void> {
         await gapi.client.drive.files.delete({ fileId });
+    }
+
+    public async Using(): Promise<number> {
+
+        const response = await gapi.client.drive.files.list({
+            spaces: 'appDataFolder',
+            pageSize: 10,
+            fields: 'nextPageToken, files(id, name, size)',
+            q: `'${this.appRoot.id}' in parents and trashed = false`,
+        });
+
+        let totalSize = 0;
+        for (const file of response.result.files || []) {
+            totalSize += parseInt(file.size || "0");
+        }
+
+        return totalSize;
+
+    }
+
+    public async Clear(): Promise<void> {
+
+        await gapi.client.drive.files.delete({
+            fileId: this.appRoot.id,
+        });
+        console.log(`Files deleted.`);
+
     }
 
 }

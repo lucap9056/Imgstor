@@ -21,7 +21,7 @@
     .settings_page_options {
         display: flex;
         gap: 1.25rem;
-        margin-top: 1.25rem;
+        margin-top: 0.625rem;
         justify-content: center;
 
         .settings_page_option {
@@ -48,4 +48,12 @@
             }
         }
     }
+
+    .settings_page_separator {
+        height: 1px;
+        width: calc(100% - 1rem);
+        background-color: #ffffffa6;
+        margin: 0 auto;
+    }
+
 }
