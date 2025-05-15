@@ -16,9 +16,9 @@ const SignIn: React.FC<Props> = ({ onSignIn }) => {
     return <div className={styles.signin_container}>
         <div className={styles.signin}>
             <div className={styles.signin_left}>
-                <div className={`${styles.signin_appname}  ${index_styles.button}`}>{t("app_name")}</div>
+                <div className={`${styles.signin_appname}  ${index_styles.button}`}>{t("app.name")}</div>
                 <button className={styles.signin_button} onClick={() => onSignIn()}>
-                    {t('signin_with_google')}
+                    {t('google.signin')}
                 </button>
 
             </div>
@@ -45,7 +45,7 @@ const SignIn: React.FC<Props> = ({ onSignIn }) => {
 
                 </div>
                 <div className={styles.signin_description}>
-                    {t("app_description")}
+                    {t("app.description")}
                 </div>
             </div>
         </div>

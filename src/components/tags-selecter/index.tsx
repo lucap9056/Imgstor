@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Message, MessageButton } from "utils/message";
+import { Message, MessageButton } from "structs/message";
 
-import Imgstor from "services/imgstor";
+import { useImgstor } from "services/imgstor";
 import { ImgstorTag } from "services/imgstor-db";
 import { TagsSelecterEvent } from "services/tags-selecter";
 
@@ -21,15 +21,12 @@ interface DraggingPosation {
     y: number
 }
 
-interface Props {
-    imgstor: Imgstor
-}
-
-const TagsSelecter: React.FC<Props> = ({ imgstor }) => {
+const TagsSelecter: React.FC = () => {
     const notifications = useNotifications();
     const loadingState = useLoadingState();
     const alerts = useAlerts();
     const { t } = useTranslation();
+    const imgstor = useImgstor();
     const [target, SetTarget] = useState<string>();
     const [selectedTags, SetSelectedTags] = useState<ImgstorTag[]>([]);
     const [notusedTags, SetNotusedTags] = useState<ImgstorTag[]>([]);
@@ -49,11 +46,11 @@ const TagsSelecter: React.FC<Props> = ({ imgstor }) => {
                 SetSelectedTags(tags);
 
                 const tagMap: { [key: string]: boolean } = {};
-                for (const tag of tags) {
-                    tagMap[tag.id] = true;
+                for (const { tagId } of tags) {
+                    tagMap[tagId] = true;
                 }
 
-                const notused = imgstor.DB.GetTags().filter(tag => tagMap[tag.id] === undefined);
+                const notused = imgstor.DB.GetTags().filter(({ tagId }) => tagMap[tagId] === undefined);
                 SetNotusedTags(notused);
 
                 SetTarget(target);
@@ -62,13 +59,19 @@ const TagsSelecter: React.FC<Props> = ({ imgstor }) => {
                 if (imgstor.DB.Changed) {
                     (async () => {
                         const loading = loadingState.Append();
-                        const saving = new Message(Message.Type.NORMAL, t("saving"));
+                        const saving = new Message({
+                            type: Message.Type.NORMAL,
+                            content: t("saving")
+                        });
                         notifications.Append(saving);
                         try {
                             await imgstor.DB.Save();
                         }
                         catch (err) {
-                            notifications.Append(new Message(Message.Type.ERROR, (err as Error).message));
+                            notifications.Append(new Message({
+                                type: Message.Type.ERROR,
+                                content: (err as Error).message
+                            }));
                         }
                         finally {
                             saving.Remove();
@@ -90,37 +93,35 @@ const TagsSelecter: React.FC<Props> = ({ imgstor }) => {
 
 
     const HandleRemoveTag = (tag: ImgstorTag) => {
-        const { id, name } = tag;
+        const { tagId, name } = tag;
 
-        const confirm = new MessageButton(t("tags_selecter_confirm"));
+        const confirm = new MessageButton(t("main.confirm"));
         confirm.on("Clicked", () => {
 
-            const selectedIndex = selectedTags.findIndex((t) => t.id === id);
-            if (selectedIndex != -1) {
-                SetSelectedTags([...selectedTags].splice(selectedIndex, 1));
+            if (selectedTags.find(t => t.tagId === tagId)) {
+                SetSelectedTags(selectedTags.filter(t => t.tagId !== tagId));
             }
 
-            const notusedIndex = notusedTags.findIndex((t) => t.id === id);
-            if (notusedIndex != -1) {
-                SetNotusedTags([...notusedTags].splice(notusedIndex, 1));
+            if (notusedTags.find(t => t.tagId === tagId)) {
+                SetNotusedTags(notusedTags.filter(t => t.tagId !== tagId));
             }
 
-            imgstor.DB.DeleteTag(id);
+            imgstor.DB.DeleteTag(tagId);
         });
 
-        const removeMessage = new Message(
-            Message.Type.ALERT,
-            t("tags_selecter_remove_tag_alert", { name }),
-            [
-                new MessageButton(t("tags_selecter_cancel")),
+        const removeMessage = new Message({
+            type: Message.Type.ALERT,
+            content: t("tags-selecter.alert.remove-tag", { name }),
+            buttons: [
+                new MessageButton(t("main.cancel")),
                 confirm
             ]
-        );
+        });
         alerts.Append(removeMessage);
     };
 
-    const HandleSelectTag = ({ id }: ImgstorTag) => {
-        const tagIndex = notusedTags.findIndex((t) => t.id === id);
+    const HandleSelectTag = ({ tagId }: ImgstorTag) => {
+        const tagIndex = notusedTags.findIndex((t) => t.tagId === tagId);
         if (tagIndex === -1) return;
         const notused = notusedTags;
         const tag = notused.splice(tagIndex, 1)[0];
@@ -129,8 +130,8 @@ const TagsSelecter: React.FC<Props> = ({ imgstor }) => {
         SetNotusedTags([...notused]);
     }
 
-    const HandleUnselectTag = ({ id }: ImgstorTag) => {
-        const tagIndex = selectedTags.findIndex((t) => t.id === id);
+    const HandleUnselectTag = ({ tagId }: ImgstorTag) => {
+        const tagIndex = selectedTags.findIndex((t) => t.tagId === tagId);
         if (tagIndex === -1) return;
         const selected = selectedTags;
         const tag = selected.splice(tagIndex, 1)[0];
@@ -243,14 +244,24 @@ const TagsSelecter: React.FC<Props> = ({ imgstor }) => {
 
         target.reset();
 
-        const id = imgstor.DB.InsertTag(name);
-        const tag: ImgstorTag = { id, name };
+        const tagId = imgstor.DB.InsertTag(name);
+        const tag: ImgstorTag = { tagId, name };
 
         SetSelectedTags([...selectedTags, tag]);
     }
 
     const HandleDragTag = (tag: ImgstorTag) => {
         SetDraggingTag(tag);
+    }
+
+    const HandleClickTag = (tag: ImgstorTag) => {
+
+        if (selectedTags.find((t) => t.tagId === tag.tagId)) {
+            HandleUnselectTag(tag);
+        } else {
+            HandleSelectTag(tag);
+        }
+
     }
 
     const HandleCancel = () => {
@@ -269,7 +280,7 @@ const TagsSelecter: React.FC<Props> = ({ imgstor }) => {
         <div className={styles.tags_selecter} ref={selecter}>
             <div className={styles.tags_selecter_selected_tags} ref={selected}>
                 {selectedTags.map(
-                    (tag) => <TagItem className={styles.tags_selecter_selected_tag} key={tag.id} tag={tag} ondrag={HandleDragTag} />
+                    (tag) => <TagItem className={styles.tags_selecter_selected_tag} key={tag.tagId} tag={tag} ondrag={HandleDragTag} onclick={HandleClickTag} />
                 )}
             </div>
 
@@ -277,16 +288,16 @@ const TagsSelecter: React.FC<Props> = ({ imgstor }) => {
 
                 <form className={styles.tags_selecter_tag_option} onSubmit={HandleCreateTag}>
 
-                    <span className={styles.tags_selecter_tag_option_label}>{t("tags_selecter_create_tag_label")}</span>
+                    <span className={styles.tags_selecter_tag_option_label}>{t("tags-selecter.tag.create.label")}</span>
                     <input type="textbox" className={styles.tags_selecter_add_tag_input} name="tag_name" />
-                    <button className={styles.tags_selecter_add_tag_button} type="submit">{t("tags_selecter_create_tag_confirm")}</button>
+                    <button className={styles.tags_selecter_add_tag_button} type="submit">{t("main.confirm")}</button>
 
                 </form>
 
                 <form className={styles.tags_selecter_tag_option}>
 
-                    <span className={styles.tags_selecter_tag_option_label}>{t("tags_selecter_remove_tag_label")}</span>
-                    <div className={styles.tags_selecter_remove_tag_block} data-label={t("tags_selecter_remove_tag_drag")}
+                    <span className={styles.tags_selecter_tag_option_label}>{t("tags-selecter.tag.remove.label")}</span>
+                    <div className={styles.tags_selecter_remove_tag_block} data-label={t("tags-selecter.tag.remove.drag")}
                         ref={remove}
                     ></div>
 
@@ -295,13 +306,13 @@ const TagsSelecter: React.FC<Props> = ({ imgstor }) => {
 
             <div className={styles.tags_selecter_not_used_tags} ref={notused}>
                 {notusedTags.map(
-                    (tag) => <TagItem className={styles.tags_selecter_not_used_tag} key={tag.id} tag={tag} ondrag={HandleDragTag} />
+                    (tag) => <TagItem className={styles.tags_selecter_not_used_tag} key={tag.tagId} tag={tag} ondrag={HandleDragTag} onclick={HandleClickTag} />
                 )}
             </div>
 
             <div className={styles.tags_selecter_options}>
-                <div className={`${styles.tags_selecter_option} ${index_styles.button}`} onClick={HandleCancel}>{t("tags_selecter_cancel")}</div>
-                <div className={`${styles.tags_selecter_option} ${index_styles.button}`} onClick={HandleConfirm}>{t("tags_selecter_confirm")}</div>
+                <div className={`${styles.tags_selecter_option} ${index_styles.button}`} onClick={HandleCancel}>{t("main.cancel")}</div>
+                <div className={`${styles.tags_selecter_option} ${index_styles.button}`} onClick={HandleConfirm}>{t("main.confirm")}</div>
             </div>
 
             {draggingTag && draggingPosation &&

@@ -4,7 +4,7 @@
 import React, { useEffect, useState } from 'react';
 import cookies from "js-cookie";
 
-import Imgstor, { ImgstorEvent, SearchContent } from 'services/imgstor';
+import { ImgstorEvent, SearchContent, useImgstor } from 'services/imgstor';
 import { ImgstorImage, ImgstorImageSort as Sort } from 'services/imgstor-db';
 
 import ImageComponenet from './image';
@@ -20,16 +20,13 @@ const enum IMAGE {
     BASE_WIDTH = 160
 }
 
-interface Props {
-    imgstor: Imgstor
-}
-
 function GetColumnCount(): number {
     return Math.floor(document.documentElement.clientWidth / IMAGE.BASE_WIDTH);
 }
 
-const Images: React.FC<Props> = ({ imgstor }) => {
+const Images: React.FC = () => {
     const loadingState = useLoadingState();
+    const imgstor = useImgstor();
     const [images, SetImages] = useState<ImgstorImage[]>(imgstor.DB.GetImages());
     const [searchContent, SetSearchContent] = useState<SearchContent>({
         title: "",
@@ -44,20 +41,27 @@ const Images: React.FC<Props> = ({ imgstor }) => {
     useEffect(() => {
         const { title, sort } = searchContent;
 
-        const tags = searchContent.tags.map((t) => t.id);
+        const tags = searchContent.tags.map((t) => t.tagId);
 
         const loading = loadingState.Append();
 
-        const searchResult = imgstor.DB.SearchImages({
-            include: ["id", "title", "width", "height", "link", "preview", "hosting_service"], tags, sort,
-            filters: (title === "") ? undefined : { title },
-            limit: SEARCH.LIMIT,
-            offset: searchOffset,
-        });
+        try {
+            const searchResult = imgstor.DB.SearchImages({
+                include: ["imageId", "title", "width", "height", "imageUrl", "previewUrl", "hostingServiceId"], tags, sort,
+                filters: (title === "") ? undefined : { title },
+                limit: SEARCH.LIMIT,
+                offset: searchOffset,
+            });
 
-        const newImages = (searchOffset === 0) ? searchResult : [...images, ...searchResult];
-        SetHasMoreImages(newImages.length % SEARCH.LIMIT === 0);
-        SetImages(newImages);
+            const newImages = (searchOffset === 0) ? searchResult : [...images, ...searchResult];
+            SetHasMoreImages(newImages.length % SEARCH.LIMIT !== 0);
+            SetImages(newImages);
+        }
+        catch (err) {
+            console.error(err);
+            SetHasMoreImages(false);
+            SetImages([]);
+        }
 
         loading.Remove();
 
@@ -109,7 +113,7 @@ const Images: React.FC<Props> = ({ imgstor }) => {
                 {images.map(
                     (image, i, images) => {
                         const onload = (hasMoreImages && i + 1 === images.length) ? HandleLoadMoreIamges : undefined;
-                        return <ImageComponenet key={image.id + image.title} imgstor={imgstor} image={image} onload={onload} />;
+                        return <ImageComponenet key={image.imageId + image.title} image={image} onload={onload} />;
                     }
                 )}
             </div>

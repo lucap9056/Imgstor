@@ -1,34 +1,34 @@
 import { FormatNames } from "services/converter/file-formats";
-import { Features, ImageFile } from "services/image-hosting-services";
+import { ServiceFeatures, ImageFile } from "services/image-hosting-services";
 import ImgstorDB, { ImgstorImage } from "services/imgstor-db";
 
 
 export default class Imgur {
     public static readonly NAME = "Imgur";
     public readonly NAME = Imgur.NAME;
-    public readonly SupportedStaticFormats: FormatNames[] = ["JPEG", "PNG", "TIFF", "GIF"];
-    public readonly SupportedDynamicFormats: FormatNames[] = ["MP4", "WEBM", "GIF", "APNG", "MPEG", "MOV", "MKV", "FLV", "AVI", "WMV"];
+    public readonly SupportedStaticFormats: FormatNames[] = ["PNG", "JPEG", "TIFF", "GIF"];
+    public readonly SupportedAnimationFormats: FormatNames[] = ["GIF", "MP4", "WEBM", "APNG", "MPEG", "MOV", "MKV", "FLV", "AVI", "WMV"];
 
-    public readonly id: string;
-    public readonly enabled: boolean;
+    public readonly hostingServiceId: string;
+    public readonly isEnabled: boolean;
     private readonly clientId: string;
-    public readonly features: Features = {
-        Save: true,
-        File: true,
-        Tags: true,
-        Description: true
+    public readonly features: ServiceFeatures = {
+        save: true,
+        file: true,
+        tags: true,
+        description: true
     };
-    constructor(id: string, enabled: boolean, clientId: string) {
-        this.id = id;
-        this.enabled = enabled;
+    constructor(id: string, isEnabled: boolean, clientId: string) {
+        this.hostingServiceId = id;
+        this.isEnabled = isEnabled;
         this.clientId = clientId;
     }
 
     public async Upload(_: boolean, imageFile: ImageFile): Promise<ImgstorImage> {
 
-        const { id, clientId } = this;
+        const { hostingServiceId, clientId } = this;
 
-        const file = (imageFile.Processed || imageFile.Original).file;
+        const file = (imageFile.processed || imageFile.original).file;
 
         if (file.size > 20 * Math.pow(1024, 2)) {
             throw new Error("the file size is too large");
@@ -36,8 +36,8 @@ export default class Imgur {
 
         const form = new FormData();
 
-        form.append("title", imageFile.Title);
-        form.append("description", imageFile.Description);
+        form.append("title", imageFile.title);
+        form.append("description", imageFile.description);
         form.append("image", file);
 
         const res = await fetch("https://api.imgur.com/3/image", {
@@ -54,23 +54,22 @@ export default class Imgur {
 
         const result = await res.json().then((r) => r as ImgurResult);
 
-        const image: ImgstorImage = {
-            id: "",
-            name: imageFile.Original.file.name,
-            type: imageFile.Original.file.type,
+        return {
+            imageId: "",
+            name: imageFile.original.file.name,
+            mimeType: imageFile.original.file.type,
             width: result.data.width.toString(),
             height: result.data.height.toString(),
-            link: result.data.link,
-            preview: `https://i.imgur.com/${result.data.id}m.jpg`,
-            title: ImgstorDB.EncodeText(imageFile.Title),
-            description: ImgstorDB.EncodeText(imageFile.Description),
-            del: result.data.deletehash,
-            create_time: new Date().getTime().toString(),
-            file_id: "",
-            hosting_service: id,
-        }
-
-        return image;
+            imageUrl: result.data.link,
+            previewUrl: `https://i.imgur.com/${result.data.id}m.jpg`,
+            deleteImageUrl: result.data.deletehash,
+            deletePreviewUrl: "",
+            title: ImgstorDB.EncodeText(imageFile.title),
+            description: ImgstorDB.EncodeText(imageFile.description),
+            createTime: new Date().getTime().toString(),
+            fileId: "",
+            hostingServiceId: hostingServiceId,
+        };
     }
 
     public Delete(image: ImgstorImage): Promise<void> {
@@ -78,7 +77,7 @@ export default class Imgur {
         const { clientId } = this;
 
         return new Promise(async () => {
-            await fetch(`https://api.imgur.com/3/image/${image.del}`, {
+            await fetch(`https://api.imgur.com/3/image/${image.deleteImageUrl}`, {
                 method: "DELETE",
                 headers: {
                     "Authorization": `Client-ID ${clientId}`
@@ -89,7 +88,7 @@ export default class Imgur {
     }
 
     public Preview(image: ImgstorImage): string {
-        return image.preview;
+        return image.previewUrl;
     }
 }
 

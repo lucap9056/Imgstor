@@ -8,20 +8,48 @@ import Label from "components/settings/blocks/label";
 import { useLoadingState } from "components/loading";
 import { useNotifications } from "components/notifications";
 
-import Imgstor from "services/imgstor";
-import { Message } from "utils/message";
+import { useImgstor } from "services/imgstor";
+import Settings, { HostingServicesConfig } from "services/settings";
+import { Message } from "structs/message";
 
 import styles from "components/settings/page/style.module.scss";
-import settings_styles from "components/settings/style.module.scss";
 
-interface Props {
-    imgstor: Imgstor
+const enum NAMES {
+    LOCAL_ENABLE = "local_enable",
+
+    IMPORT_ENABLE = "import_enable",
+
+    IMGUR_ENABLE = "imgur_enable",
+    IMGUR_CLIENT_ID = "imgur_client_id",
+
+    CATBOX_ENABLE = "catbox_enable",
+    CATBOX_PROXY = "catbox_proxy",
+    CATBOX_USERHASH = "catbox_userhash",
+    CATBOX_SEPARATE_PREVIEW = "catbox_separate_preview",
+
+    SMMS_ENABLE = "smms_enable",
+    SMMS_PROXTY = "smms_proxy",
+    SMMS_TOKEN = "smms_token",
+    SMMS_SEPARATE_PREVIEW = "smms_separate_preview",
 }
 
-const SettingHostingServices: React.FC<Props> = ({ imgstor }) => {
+class Form {
+    private formData: FormData;
+    constructor(target: EventTarget) {
+        this.formData = new FormData(target as HTMLFormElement);
+    }
+
+    public get(key: string): string {
+        const value = this.formData.get(key);
+        return (value === null) ? "" : value.toString();
+    }
+}
+
+const SettingHostingServices: React.FC = () => {
     const notifications = useNotifications();
     const loadingState = useLoadingState();
     const { t } = useTranslation();
+    const imgstor = useImgstor();
     const { local, importExternal, imgur, catbox, smms } = imgstor.Settings.Config.hostingServices;
 
 
@@ -31,40 +59,52 @@ const SettingHostingServices: React.FC<Props> = ({ imgstor }) => {
 
         const config = imgstor.Settings.Config;
 
-        const form = new FormData(e.target as HTMLFormElement);
+        const form = new Form(e.target)
 
         const saving = loadingState.Append();
-        const savingMessage = new Message(Message.Type.ALERT, "saving...");
+        const savingMessage = new Message({
+            type: Message.Type.ALERT,
+            content: "saving..."
+        });
 
         notifications.Append(savingMessage);
         try {
-            Object.assign(config.hostingServices, {
+            const updatedHostingServicesConfig: HostingServicesConfig = {
+                version: Settings.HOSTING_SERVICE_VERSION,
                 local: {
-                    enabled: (form.get("only_drive_enabled") || "").toString() === "true",
+                    isEnabled: form.get(NAMES.LOCAL_ENABLE) === "true",
                 },
                 importExternal: {
-                    enabled: (form.get("import_enabled") || "").toString() === "true",
+                    isEnabled: form.get(NAMES.IMPORT_ENABLE) === "true",
                 },
                 imgur: {
-                    enabled: (form.get("imgur_enabled") || "").toString() === "true",
-                    clientId: (form.get("imgur_client_id") || "").toString()
+                    isEnabled: form.get(NAMES.IMGUR_ENABLE) === "true",
+                    clientId: form.get(NAMES.IMGUR_CLIENT_ID)
                 },
                 catbox: {
-                    enabled: (form.get("catbox_enabled") || "").toString() === "true",
-                    proxy: (form.get("catbox_proxy") || "").toString(),
-                    userhash: (form.get("catbox_userhash") || "").toString()
+                    isEnabled: form.get(NAMES.CATBOX_ENABLE) === "true",
+                    proxy: form.get(NAMES.CATBOX_PROXY),
+                    userhash: form.get(NAMES.CATBOX_USERHASH),
+                    separatePreviewUpload: form.get(NAMES.CATBOX_SEPARATE_PREVIEW) === "true"
                 },
                 smms: {
-                    enabled: (form.get("smms_enabled") || "").toString() === "true",
-                    proxy: (form.get("smms_proxy") || "").toString(),
-                    token: (form.get("smms_token") || "").toString(),
+                    isEnabled: form.get(NAMES.SMMS_ENABLE) === "true",
+                    proxy: form.get(NAMES.SMMS_PROXTY),
+                    token: form.get(NAMES.SMMS_TOKEN),
+                    separatePreviewUpload: form.get(NAMES.SMMS_SEPARATE_PREVIEW) === "true"
                 }
-            });
+            }
 
-            await imgstor.Settings.SaveConfig(config);
+            await imgstor.Settings.SaveConfig({
+                ...config,
+                hostingServices: updatedHostingServicesConfig
+            });
         }
         catch (err) {
-            notifications.Append(new Message(Message.Type.ERROR, (err as Error).message));
+            notifications.Append(new Message({
+                type: Message.Type.ERROR,
+                content: (err as Error).message
+            }));
         }
         finally {
             saving.Remove();
@@ -73,34 +113,97 @@ const SettingHostingServices: React.FC<Props> = ({ imgstor }) => {
     }
 
     return <form className={styles.settings_page} onSubmit={HandleSave}>
-        <Block title="Local">
-            <Label>{t("settings_page_hosting_services_description_local")}</Label>
-            <Toggle label="Enabled" name="only_drive_enabled" value={local.enabled}></Toggle>
+        <Block title={t("settings.hosting-service.title.local")} visible={false}>
+
+            <Label>{t("settings.hosting-service.description.local")}</Label>
+            <Toggle
+                label={t("settings.hosting-service.enable")}
+                name={NAMES.LOCAL_ENABLE}
+                value={local.isEnabled}
+            />
+
         </Block>
-        <Block title="Import">
-            <Label>{t("settings_page_hosting_services_description_import")}</Label>
-            <Toggle label="Enabled" name="import_enabled" value={importExternal.enabled}></Toggle>
+        <Block title={t("settings.hosting-service.title.import")} visible={false}>
+
+            <Label>{t("settings.hosting-service.description.import")}</Label>
+            <Toggle
+                label={t("settings.hosting-service.enable")}
+                name={NAMES.IMPORT_ENABLE}
+                value={importExternal.isEnabled}
+            />
+
         </Block>
-        <Block title="Imgur">
-            <Toggle label="Enabled" name="imgur_enabled" value={imgur.enabled}></Toggle>
-            <Textbox label="Client ID" name="imgur_client_id" password={true} value={imgur.clientId} />
+        <Block title={t("settings.hosting-service.title.imgur")}>
+
+            <Toggle
+                label={t("settings.hosting-service.enable")}
+                name={NAMES.IMGUR_ENABLE}
+                value={imgur.isEnabled}
+            />
+            <Textbox
+                label={t("settings.hosting-service.client-id")}
+                name={NAMES.IMGUR_CLIENT_ID}
+                password={true}
+                value={imgur.clientId}
+            />
+
         </Block>
-        <Block title="Catbox">
-            <Toggle label="Enabled" name="catbox_enabled" value={catbox.enabled}></Toggle>
-            <Textbox label="Proxy" name="catbox_proxy" value={catbox.proxy} />
-            <Textbox label="Userhash" name="catbox_userhash" password={true} value={catbox.userhash} />
+        <Block title={t("settings.hosting-service.title.catbox")}>
+
+            <Toggle
+                label={t("settings.hosting-service.enable")}
+                name={NAMES.CATBOX_ENABLE}
+                value={catbox.isEnabled}
+            />
+            <Textbox
+                label={t("settings.hosting-service.proxy")}
+                name={NAMES.CATBOX_PROXY}
+                value={catbox.proxy}
+            />
+            <Textbox
+                label={t("settings.hosting-service.userhash")}
+                name={NAMES.CATBOX_USERHASH}
+                password={true}
+                value={catbox.userhash}
+            />
+            <Toggle label={t("settings.hosting-service.separate-preview")}
+                name={NAMES.CATBOX_SEPARATE_PREVIEW}
+                value={catbox.separatePreviewUpload}
+            ></Toggle>
+
         </Block>
-        <Block title="SM.MS">
-            <Toggle label="Enabled" name="smms_enabled" value={smms.enabled}></Toggle>
-            <Textbox label="Proxy" name="smms_proxy" value={smms.proxy} />
-            <Textbox label="API Token" name="smms_token" password={true} value={smms.token} />
+        <Block title={t("settings.hosting-service.title.sm-ms")}>
+
+            <Toggle
+                label={t("settings.hosting-service.enable")}
+                name={NAMES.SMMS_ENABLE}
+                value={smms.isEnabled}
+            />
+            <Textbox
+                label={t("settings.hosting-service.proxy")}
+                name={NAMES.SMMS_PROXTY}
+                value={smms.proxy}
+            />
+            <Textbox
+                label={t("settings.hosting-service.api-token")}
+                name={NAMES.SMMS_TOKEN}
+                password={true}
+                value={smms.token}
+            />
+            <Toggle
+                label={t("settings.hosting-service.separate-preview")}
+                name={NAMES.SMMS_SEPARATE_PREVIEW}
+                value={smms.separatePreviewUpload}
+            />
+
         </Block>
 
-        <div className={settings_styles.settings_interval}></div>
+        <div className={styles.settings_page_separator}></div>
         <div className={styles.settings_page_options}>
-            <button className={styles.settings_page_option} type="submit">{t("settings_save")}</button>
+            <button className={styles.settings_page_option} type="submit">{t("main.save")}</button>
         </div>
     </form>
 }
+
 
 export default SettingHostingServices;

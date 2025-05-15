@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import Imgstor, { SearchContent } from "services/imgstor";
+import { SearchContent, useImgstor } from "services/imgstor";
 import ImgstorDB, { ImgstorTag, ImgstorImage } from "services/imgstor-db";
 import { TagsSelecterEvent } from "services/tags-selecter";
 
@@ -9,11 +9,11 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMagnifyingGlass, faTags } from "@fortawesome/free-solid-svg-icons";
 
 interface Props {
-    imgstor: Imgstor
     onchange: (content: SearchContent) => void
 }
 
-const Search: React.FC<Props> = ({ imgstor, onchange }) => {
+const Search: React.FC<Props> = ({ onchange }) => {
+    const imgstor = useImgstor();
     const [selectedTags, SetSelectedTags] = useState<ImgstorTag[]>();
     const [searchTitle, SetSearchTitle] = useState<string>();
 

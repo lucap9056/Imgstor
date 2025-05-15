@@ -1,5 +1,5 @@
 import { FormatNames } from "services/converter/file-formats";
-import { Features, ImageFile } from "services/image-hosting-services";
+import { ServiceFeatures, ImageFile } from "services/image-hosting-services";
 import ImgstorDB, { ImgstorImage } from "services/imgstor-db";
 
 export interface ImageData {
@@ -12,24 +12,24 @@ export default class ImportExternal {
     public readonly NAME = ImportExternal.NAME;
 
     public readonly SupportedStaticFormats: FormatNames[] = [];
-    public readonly SupportedDynamicFormats: FormatNames[] = [];
+    public readonly SupportedAnimationFormats: FormatNames[] = [];
 
-    public readonly id: string;
-    public readonly enabled: boolean;
-    public readonly features: Features = {
-        Save: false,
-        File: false,
-        Tags: true,
-        Description: true
+    public readonly hostingServiceId: string;
+    public readonly isEnabled: boolean;
+    public readonly features: ServiceFeatures = {
+        save: false,
+        file: false,
+        tags: true,
+        description: true
     };
 
-    constructor(id: string, enabled: boolean) {
-        this.id = id;
-        this.enabled = enabled;
+    constructor(id: string, isEnabled: boolean) {
+        this.hostingServiceId = id;
+        this.isEnabled = isEnabled;
     }
 
     public async Upload(_: boolean, file: ImageFile): Promise<ImgstorImage> {
-        const { id } = this;
+        const { hostingServiceId } = this;
 
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -43,14 +43,14 @@ export default class ImportExternal {
 
                     resolve({
                         ...ImgstorImage.Empty,
-                        width: file.Width.toString(),
-                        height: file.Height.toString(),
-                        link: imageUrl,
-                        preview: previewUrl,
-                        title: ImgstorDB.EncodeText(file.Title),
-                        description: ImgstorDB.EncodeText(file.Description),
-                        create_time: new Date().getTime().toString(),
-                        hosting_service: id
+                        width: file.width.toString(),
+                        height: file.height.toString(),
+                        imageUrl: imageUrl,
+                        previewUrl: previewUrl,
+                        title: ImgstorDB.EncodeText(file.title),
+                        description: ImgstorDB.EncodeText(file.description),
+                        createTime: new Date().getTime().toString(),
+                        hostingServiceId: hostingServiceId
                     });
 
                 }
@@ -62,7 +62,7 @@ export default class ImportExternal {
 
             reader.onerror = reject;
 
-            reader.readAsText(file.Original.file);
+            reader.readAsText(file.original.file);
         });
     }
 
@@ -71,6 +71,6 @@ export default class ImportExternal {
     }
 
     public Preview(image: ImgstorImage): string {
-        return image.preview;
+        return image.previewUrl;
     }
 }

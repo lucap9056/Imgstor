@@ -6,6 +6,11 @@ export interface ImgstorHostingService {
     name: string
 }
 
+const COLUMNS: { [K in keyof ImgstorHostingService]: K } = {
+    id: "id",
+    name: "name"
+};
+
 export class ImgstorHostingService {
     private static readonly empty: ImgstorHostingService = {
         id: "",
@@ -19,8 +24,8 @@ export class ImgstorHostingService {
 const TABLE_NAME = "HostingService";
 const CREATE_CMD = `
 CREATE TABLE ${TABLE_NAME} (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL
+    ${COLUMNS.id} INTEGER PRIMARY KEY AUTOINCREMENT,
+    ${COLUMNS.name} TEXT NOT NULL
 );
 `;
 
@@ -48,22 +53,22 @@ function Get(db: Database, ...include: (keyof ImgstorHostingService)[]): Imgstor
 }
 
 function Insert(db: Database, name: string): void {
-    const stmt = db.prepare(`INSERT INTO ${TABLE_NAME} (name) VALUES (?)`)
+    const stmt = db.prepare(`INSERT INTO ${TABLE_NAME} (${COLUMNS.name}) VALUES (?)`)
     stmt.run([name]);
     stmt.free();
 }
 
 function Update(db: Database, hostingService: ImgstorHostingService): void {
     const { id, name } = hostingService;
-    const columnsToUpdate = "name = ?";
-    const stmt = db.prepare(`UPDATE ${TABLE_NAME} SET ${columnsToUpdate} WHERE id = ?`);
+
+    const stmt = db.prepare(`UPDATE ${TABLE_NAME} SET ${COLUMNS.name}=? WHERE ${COLUMNS.id}=?`);
 
     stmt.run([name, id]);
     stmt.free();
 }
 
 function Delete(db: Database, id: string): void {
-    const stmt = db.prepare(`DELETE FROM ${TABLE_NAME} WHERE id=?`)
+    const stmt = db.prepare(`DELETE FROM ${TABLE_NAME} WHERE ${COLUMNS.id}=?`)
     stmt.run([id]);
     stmt.free();
 }
@@ -75,4 +80,5 @@ export default {
     Delete,
     TABLE_NAME,
     CREATE_CMD,
+    COLUMNS
 }

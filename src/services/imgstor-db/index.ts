@@ -7,6 +7,7 @@ import Image, { ImgstorImage, ImgstorImageSort } from "services/imgstor-db/image
 import HostingService, { ImgstorHostingService } from "services/imgstor-db/hosting-service";
 import ImageTag from "services/imgstor-db/image-tag";
 import Advanced, { SearchImagesArgs } from "services/imgstor-db/advanced";
+import Info from "services/imgstor-db/info";
 
 export {
     ImgstorHostingService,
@@ -18,13 +19,6 @@ export type {
     ImgstorImageSort,
     SearchImagesArgs
 };
-
-const CREATE_CMD = `
-${HostingService.CREATE_CMD}
-${Tag.CREATE_CMD}
-${Image.CERATE_CMD}
-${ImageTag.CREATE_CMD}
-`;
 
 const enum DataFile {
     name = ".db",
@@ -43,6 +37,47 @@ type ImgstorDBEventDefinitions = {
 export type ImgstorDBEvent<T extends keyof ImgstorDBEventDefinitions> = ImgstorDBEventDefinitions[T];
 
 
+const enum SqlJs {
+    Host = "https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/"
+}
+
+async function LoadDatabase(data: string): Promise<Database> {
+    const sql = await initSqlJs({
+        locateFile: file => SqlJs.Host + file
+    });
+    const dataBytes = ImgstorDB.Base64ToUint8Array(data);
+    const db = new sql.Database(dataBytes);
+
+    try {
+        Info.ensureVersion(db);
+    }
+    catch {
+        return NewDatabase();
+    }
+
+    return db;
+}
+
+async function NewDatabase(): Promise<Database> {
+    const sql = await initSqlJs({
+        locateFile: file => SqlJs.Host + file
+    });
+    const db = new sql.Database();
+
+    db.run(`
+${Info.CREATE_CMD}
+${HostingService.CREATE_CMD}
+${Tag.CREATE_CMD}
+${Image.CERATE_CMD}
+${ImageTag.CREATE_CMD}
+`);
+
+    const stmt = db.prepare(Info.INSERT_CMD);
+    stmt.run([Info.VERSION]);
+    stmt.free();
+    return db;
+}
+
 export default class ImgstorDB extends EventDispatcher<ImgstorDBEventDefinitions> {
 
     public static Base64ToUint8Array = function (base64: string): Uint8Array {
@@ -51,20 +86,9 @@ export default class ImgstorDB extends EventDispatcher<ImgstorDBEventDefinitions
 
     public static New = async function (drive: Drive): Promise<ImgstorDB> {
 
-        const dataFile = await ImgstorDB.ReadData(drive)
+        const dataFile = await ImgstorDB.ReadData(drive);
 
-        const sql = await initSqlJs();
-
-        let db: Database;
-        if (dataFile.data) {
-            const dataBytes = ImgstorDB.Base64ToUint8Array(dataFile.data);
-            db = new sql.Database(dataBytes);
-        } else {
-            db = new sql.Database();
-
-            db.run(CREATE_CMD);
-        }
-
+        const db = (dataFile.data) ? await LoadDatabase(dataFile.data) : await NewDatabase();
 
         return new ImgstorDB(db, drive, dataFile);
     }
@@ -194,9 +218,9 @@ export default class ImgstorDB extends EventDispatcher<ImgstorDBEventDefinitions
         this.changed = true;
     }
 
-    public DeleteImage(id: string): void {
-        Image.Delete(this.db, id);
-        this.emit("ImageUpdated", { detail: { ...ImgstorImage.Empty, id } });
+    public DeleteImage(imageId: string): void {
+        Image.Delete(this.db, imageId);
+        this.emit("ImageUpdated", { detail: { ...ImgstorImage.Empty, imageId } });
         this.changed = true;
     }
 

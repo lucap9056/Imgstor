@@ -34,7 +34,7 @@ const HostingServicesSelect: React.FC<Props> = ({ imgstor, onchange }) => {
     }, []);
 
     const HandleSeletedImageHostingService = (id: string) => {
-        const hostingService = hostingServices.find((h) => h.id === id);
+        const hostingService = hostingServices.find((h) => h.hostingServiceId === id);
         if (hostingService) {
             SetSelectedHostingService(hostingService);
         }
@@ -44,13 +44,13 @@ const HostingServicesSelect: React.FC<Props> = ({ imgstor, onchange }) => {
         return <></>;
     }
 
-    return <div className={styles.image_hosting_services} data-text={t("uploader_image_hosting_service")}>
+    return <div className={styles.image_hosting_services} data-text={t("uploader.label.hosting-service")}>
         {Object.values(hostingServices).map(
-            ({ id, NAME }) => <div
-                key={id}
+            ({ hostingServiceId, NAME }) => <div
+                key={hostingServiceId}
                 className={styles.image_hosting_service}
-                data-selected={id === selectedHostingService.id}
-                onClick={() => HandleSeletedImageHostingService(id)}
+                data-selected={hostingServiceId === selectedHostingService.hostingServiceId}
+                onClick={() => HandleSeletedImageHostingService(hostingServiceId)}
             >{NAME}</div>
         )}
     </div>;

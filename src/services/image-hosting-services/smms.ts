@@ -1,5 +1,5 @@
 import { FormatNames } from "services/converter/file-formats";
-import { Features, ImageFile } from "services/image-hosting-services";
+import { ServiceFeatures, ImageFile } from "services/image-hosting-services";
 import ImgstorDB, { ImgstorImage } from "services/imgstor-db";
 
 interface SmmsUploadResult {
@@ -34,75 +34,117 @@ export default class Smms {
     public static readonly NAME = "SM.MS";
     public readonly NAME = Smms.NAME;
 
-    public readonly SupportedStaticFormats: FormatNames[] = ["WebP", "PNG", "JPEG", "TIFF", "AVIF", "BMP"];//svg heif heic
-    public readonly SupportedDynamicFormats: FormatNames[] = ["GIF", "WEBM", "APNG", "MP4", "MPEG", "MOV", "MKV", "FLV", "AVI", "WMV", "OGG"];
+    private static readonly UPLOAD_SIZE_LIMIT_BYTES = 5 * Math.pow(1024, 2); //5MB
 
-    public readonly id: string;
-    public readonly enabled: boolean;
+    public readonly SupportedStaticFormats: FormatNames[] = ["WebP", "PNG", "JPEG", "TIFF", "AVIF", "BMP"];//svg heif heic
+    public readonly SupportedAnimationFormats: FormatNames[] = ["GIF", "WEBM", "APNG", "MP4", "MPEG", "MOV", "MKV", "FLV", "AVI", "WMV", "OGG"];
+
+    public readonly hostingServiceId: string;
+    public readonly isEnabled: boolean;
     private readonly proxy: string;
     private readonly token: string;
-    public readonly features: Features = {
-        Save: true,
-        File: true,
-        Tags: true,
-        Description: true
+    private readonly separatePreviewUpload: boolean;
+    public readonly features: ServiceFeatures = {
+        save: true,
+        file: true,
+        tags: true,
+        description: true
     };
-    constructor(id: string, ebabled: boolean, proxy: string, token: string) {
-        this.id = id;
-        this.enabled = ebabled;
+    constructor(id: string, isEnabled: boolean, proxy: string, token: string, separatePreviewUpload: boolean) {
+        this.hostingServiceId = id;
+        this.isEnabled = isEnabled;
         this.proxy = proxy;
         this.token = token;
+        this.separatePreviewUpload = separatePreviewUpload;
     }
 
-    public async Upload(_: boolean, imageFile: ImageFile): Promise<ImgstorImage> {
-        const { id, proxy, token } = this;
+    public async Upload(shouldSave: boolean, imageFile: ImageFile): Promise<ImgstorImage> {
+        const { hostingServiceId, proxy, token, separatePreviewUpload } = this;
 
-        const file = (imageFile.Processed || imageFile.Original).file;
+        const file = (imageFile.processed || imageFile.original).file;
 
-        if (file.size > 5 * Math.pow(1024, 2)) {
-            throw new Error("the file size is too large");
+        if (file.size > Smms.UPLOAD_SIZE_LIMIT_BYTES) {
+            throw new Error(`Image file size exceeds the limit of ${Smms.UPLOAD_SIZE_LIMIT_BYTES / Math.pow(1024, 2)}MB.`);
         }
+
+
+        if (shouldSave && separatePreviewUpload) {
+            if (!imageFile.preview) {
+                throw new Error("Preview image file is required when separate preview upload is enabled.");
+            }
+
+            const previewFile = imageFile.preview.file;
+
+            if (previewFile.size > Smms.UPLOAD_SIZE_LIMIT_BYTES) {
+                throw new Error(`Preview image file size exceeds the limit of ${Smms.UPLOAD_SIZE_LIMIT_BYTES / Math.pow(1024, 2)}MB.`);
+            }
+        }
+
+        const mainRequest = (() => {
+
+            const form = new FormData();
+            form.append("smfile", file);
+            return fetch(`${proxy}/api/v2/upload`, {
+                method: "POST",
+                headers: {
+                    "Authorization": token
+                },
+                body: form
+            });
+        })();
+
+        const previewRequest = (() => {
+            if (shouldSave && separatePreviewUpload && imageFile.preview) {
+                return Smms.ConvertPngToWebpThumbnail(imageFile.preview.file).then((thumbnail) => {
+                    const form = new FormData();
+                    form.append("smfile", thumbnail);
+                    return fetch(`${proxy}/api/v2/upload`, {
+                        method: "POST",
+                        headers: {
+                            "Authorization": token
+                        },
+                        body: form
+                    });
+                });
+            }
+        })();
 
         const form = new FormData();
         form.append("smfile", file);
 
-        const res = await fetch(`${proxy}/api/v2/upload`, {
-            method: "POST",
-            headers: {
-                "Authorization": token
-            },
-            body: form
-        });
+        try {
+            const mainResult: SmmsUploadResult = await mainRequest.then(res => res.json());
 
-        if (!res.ok) {
-            throw new Error(`HTTP fail! status: ${res.status}`);
+            const previewResult = previewRequest ?
+                await previewRequest.then(res => res.json()) : undefined;
+
+            return {
+                imageId: "",
+                name: imageFile.original.file.name,
+                mimeType: imageFile.original.file.type,
+                width: mainResult.data.width.toString(),
+                height: mainResult.data.height.toString(),
+                imageUrl: mainResult.data.url,
+                previewUrl: previewResult.data.url || mainResult.data.url,
+                deleteImageUrl: mainResult.data.hash,
+                deletePreviewUrl: previewResult.data.url || mainResult.data.url,
+                title: ImgstorDB.EncodeText(imageFile.title),
+                description: ImgstorDB.EncodeText(imageFile.description),
+                createTime: new Date().getTime().toString(),
+                fileId: "",
+                hostingServiceId: hostingServiceId
+            }
+
         }
-
-        const result: SmmsUploadResult = await res.json();
-
-        const image: ImgstorImage = {
-            id: "",
-            name: imageFile.Original.file.name,
-            type: imageFile.Original.file.type,
-            width: result.data.width.toString(),
-            height: result.data.height.toString(),
-            link: result.data.url,
-            preview: result.data.url,
-            title: ImgstorDB.EncodeText(imageFile.Title),
-            description: ImgstorDB.EncodeText(imageFile.Description),
-            del: result.data.hash,
-            create_time: new Date().getTime().toString(),
-            file_id: "",
-            hosting_service: id
+        catch (err) {
+            throw new Error(`Failed to upload image: ${(err as Error).message}`);
         }
-
-        return image;
     }
 
     public async Delete(image: ImgstorImage): Promise<void> {
         const { proxy, token } = this;
 
-        const res = await fetch(`${proxy}/api/v2/delete/${image.del}`, {
+        const res = await fetch(`${proxy}/api/v2/delete/${image.deleteImageUrl}`, {
             headers: {
                 "Authorization": token
             },
@@ -121,7 +163,65 @@ export default class Smms {
     }
 
     public async Preview(image: ImgstorImage): Promise<string> {
-        return image.preview;
+        return image.previewUrl;
+    }
+
+
+    private static async ConvertPngToWebpThumbnail(pngFile: File): Promise<File> {
+        const MAX_DIMENSION = 640;
+        const WEBP_MIME_TYPE = "image/webp";
+        const THUMBNAIL_FILE_NAME = "thumbnail.webp";
+
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+
+            img.onerror = () => {
+                reject(new Error("Failed to load the image."));
+            };
+
+            img.onload = () => {
+                let currentWidth = img.width;
+                let currentHeight = img.height;
+
+                if (currentWidth > MAX_DIMENSION) {
+                    currentHeight *= (MAX_DIMENSION / currentWidth);
+                    currentWidth = MAX_DIMENSION;
+                }
+                if (currentHeight > MAX_DIMENSION) {
+                    currentWidth *= (MAX_DIMENSION / currentHeight);
+                    currentHeight = MAX_DIMENSION;
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = currentWidth;
+                canvas.height = currentHeight;
+                const context = canvas.getContext('2d');
+
+                if (!context) {
+                    reject(new Error("Could not get 2D rendering context."));
+                    URL.revokeObjectURL(img.src);
+                    return;
+                }
+
+                context.drawImage(img, 0, 0, currentWidth, currentHeight);
+
+                canvas.toBlob(
+                    (blob) => {
+                        if (blob) {
+                            const webpThumbnail = new File([blob], THUMBNAIL_FILE_NAME, { type: WEBP_MIME_TYPE });
+                            resolve(webpThumbnail);
+                        } else {
+                            reject(new Error("Failed to convert canvas to blob."));
+                        }
+                    },
+                    WEBP_MIME_TYPE
+                );
+
+                URL.revokeObjectURL(img.src);
+            };
+
+            img.src = URL.createObjectURL(pngFile);
+        });
     }
 }
 

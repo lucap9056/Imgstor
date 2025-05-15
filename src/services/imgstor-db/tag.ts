@@ -1,13 +1,18 @@
 import { Database } from "sql.js";
 
 export interface ImgstorTag {
-    id: string
+    tagId: string
     name: string
 }
 
+const COLUMNS: { [K in keyof ImgstorTag]: K } = {
+    tagId: "tagId",
+    name: "name"
+};
+
 export class ImgstorTag {
     private static readonly empty: ImgstorTag = {
-        id: "",
+        tagId: "",
         name: ""
     }
 
@@ -20,8 +25,8 @@ const TABLE_NAME = "Tag";
 
 const CREATE_CMD = `
 CREATE TABLE ${TABLE_NAME} (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL
+    ${COLUMNS.tagId} INTEGER PRIMARY KEY AUTOINCREMENT,
+    ${COLUMNS.name} TEXT NOT NULL
 );
 `;
 
@@ -52,22 +57,21 @@ function Get(db: Database, ...include: (keyof ImgstorTag)[]): ImgstorTag[] {
 }
 
 function Insert(db: Database, name: string): void {
-    const stmt = db.prepare(`INSERT INTO ${TABLE_NAME} (name) VALUES (?)`)
+    const stmt = db.prepare(`INSERT INTO ${TABLE_NAME} (${COLUMNS.name}) VALUES (?)`)
     stmt.run([name]);
     stmt.free();
 }
 
 function Update(db: Database, tag: ImgstorTag): void {
-    const { id, name } = tag;
-    const columnsToUpdate = "name = ?";
-    const stmt = db.prepare(`UPDATE ${TABLE_NAME} SET ${columnsToUpdate} WHERE id = ?`);
+    const { tagId, name } = tag;
+    const stmt = db.prepare(`UPDATE ${TABLE_NAME} SET ${COLUMNS.name}=? WHERE ${COLUMNS.tagId}=?`);
 
-    stmt.run([name, id]);
+    stmt.run([name, tagId]);
     stmt.free();
 }
 
 function Delete(db: Database, id: string): void {
-    const stmt = db.prepare(`DELETE FROM ${TABLE_NAME} WHERE id=?`)
+    const stmt = db.prepare(`DELETE FROM ${TABLE_NAME} WHERE ${COLUMNS.tagId}=?`)
     stmt.run([id]);
     stmt.free();
 }
@@ -79,4 +83,5 @@ export default {
     Delete,
     TABLE_NAME,
     CREATE_CMD,
+    COLUMNS
 }

@@ -4,9 +4,9 @@ import React, { useEffect, useState } from "react";
 import { useInView } from "react-intersection-observer";
 import { useNavigate } from "react-router-dom";
 import RoutePaths from "route-paths";
-import Imgstor from "services/imgstor";
+import { useImgstor } from "services/imgstor";
 import ImgstorDB, { ImgstorImage } from "services/imgstor-db";
-import { Message } from "utils/message";
+import { Message } from "structs/message";
 
 import styles from "components/images/style.module.scss";
 import { useTranslation } from "react-i18next";
@@ -14,19 +14,19 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCopy } from "@fortawesome/free-solid-svg-icons";
 
 interface Props {
-    imgstor: Imgstor
     image: ImgstorImage
     onload?: () => void
 }
 
-const ImageComponenet: React.FC<Props> = ({ imgstor, image, onload }) => {
+const ImageComponenet: React.FC<Props> = ({ image, onload }) => {
     const imgstorNotifications = useNotifications();
     const { t } = useTranslation();
+    const imgstor = useImgstor();
     const navigate = useNavigate();
     const [title, SetTitle] = useState(image.title);
     const [preview, SetPreview] = useState<string>();
     const [invalidImageUrl, SetInvalidImageUrl] = useState<string>();
-    const hostingService = imgstor.AvailableHostingServices[image.hosting_service];
+    const hostingService = imgstor.AvailableHostingServices[image.hostingServiceId];
 
     const { ref, inView } = useInView({
         triggerOnce: true,
@@ -36,7 +36,9 @@ const ImageComponenet: React.FC<Props> = ({ imgstor, image, onload }) => {
     useEffect(() => {
         const fetchPreview = async () => {
             if (hostingService === undefined) {
-                SetTitle(`image hosting service id:${image.hosting_service} not found`);
+                SetTitle(
+                    t("image.hosting-service.not-found", { hostingService: image.hostingServiceId })
+                );
                 return;
             }
 
@@ -65,19 +67,19 @@ const ImageComponenet: React.FC<Props> = ({ imgstor, image, onload }) => {
 
     const HandleCopyLink = () => {
         if (!image) return;
-        const copiedMessage = new Message(
-            Message.Type.NORMAL,
-            t("viewer_copy_link_notification")
-        );
+        const copiedMessage = new Message({
+            type: Message.Type.NORMAL,
+            content: t("viewer.notification.link-copied")
+        });
         imgstorNotifications.Append(
             copiedMessage
         );
-        navigator.clipboard.writeText(image.link);
+        navigator.clipboard.writeText(image.imageUrl);
     }
 
     const HandleFocusView = () => {
 
-        navigate(RoutePaths.FOCUS_VIEW + "/" + image.id);
+        navigate(RoutePaths.FOCUS_VIEW + "/" + image.imageId);
     }
 
     const InvalidImageUrl = (): string => {
@@ -105,7 +107,7 @@ const ImageComponenet: React.FC<Props> = ({ imgstor, image, onload }) => {
             <rect width="100%" height="100%" fill="#f8d7da"/>
             <text x="50%" y="50%" font-size="24" text-anchor="middle" fill="#721c24" dominant-baseline="middle">
                 <tspan x="50%" dy="-15">${t("image_preview_failed")}</tspan>
-                <tspan x="50%" dy="30">${image.preview}</tspan>
+                <tspan x="50%" dy="30">${image.previewUrl}</tspan>
             </text>
         </svg>
     `;
@@ -127,7 +129,7 @@ const ImageComponenet: React.FC<Props> = ({ imgstor, image, onload }) => {
     return <div className={styles.image} ref={ref}>
 
         {preview && <>
-            <img className={styles.image_preview} alt={t("image_preview_failed")} onError={HandleImageError} src={preview} onClick={HandleFocusView} loading="lazy" />
+            <img className={styles.image_preview} alt={t("image.preview.failed")} onError={HandleImageError} src={preview} onClick={HandleFocusView} loading="lazy" />
 
             <div className={styles.image_copy_link} onClick={HandleCopyLink}>
                 <FontAwesomeIcon icon={faCopy} />

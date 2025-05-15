@@ -30,16 +30,16 @@ function SearchImages(db: Database, args: SearchImagesArgs = {}): ImgstorImage[]
     if (tags.length > 0) {
         const tagPlaceholders = tags.map(() => "?").join(", ");
         const count = tags.length
-        query += ` JOIN ${ImageTag.TABLE_NAME} it ON it.image = i.id
-                       WHERE it.tag IN (${tagPlaceholders})
-                       GROUP BY i.id HAVING COUNT(DISTINCT it.tag) = ${count}`;
+        query += ` JOIN ${ImageTag.TABLE_NAME} it ON it.${ImageTag.COLUMNS.image} = i.${Image.COLUMNS.imageId}
+                       WHERE it.${ImageTag.COLUMNS.tag} IN (${tagPlaceholders})
+                       GROUP BY i.${Image.COLUMNS.imageId} HAVING COUNT(DISTINCT it.${ImageTag.COLUMNS.tag}) = ${count}`;
     }
 
     const validFilters = Object.entries(filters).filter(([_, value]) => value !== undefined);
 
     const filterQuery = validFilters.map(([field, value]) => {
         switch (field) {
-            case "title":
+            case Image.COLUMNS.title:
                 params.push(`%${value.replace(/%/g, '\\%')}%`);
                 return field + " LIKE ? ESCAPE '\\'";
             default:
@@ -55,10 +55,10 @@ function SearchImages(db: Database, args: SearchImagesArgs = {}): ImgstorImage[]
 
     switch (sort) {
         case ImgstorImage.SORT.NEWEST:
-            query += " ORDER BY i.create_time DESC";
+            query += ` ORDER BY i.${Image.COLUMNS.createTime} DESC`;
             break;
         case ImgstorImage.SORT.OLDEST:
-            query += " ORDER BY i.create_time ASC";
+            query += ` ORDER BY i.${Image.COLUMNS.createTime} ASC`;
             break;
     }
 
@@ -74,7 +74,7 @@ function SearchImages(db: Database, args: SearchImagesArgs = {}): ImgstorImage[]
 
 
     const images: ImgstorImage[] = [];
-    
+
     const result = db.exec(query, params);
 
     if (result.length === 0) return images;

@@ -44,12 +44,12 @@ const SortSelecter: React.FC<Props> = ({ defaultValue, onchange }) => {
     }
 
     return <div ref={sortSelecterRef} className={styles.images_sort_select}>
-        <span className={styles.images_sort_selected_option} onClick={() => SetSortOptionsVisible(true)}>{t(`images_sort_${sort}`)}</span>
+        <span className={styles.images_sort_selected_option} onClick={() => SetSortOptionsVisible(true)}>{t(`image.sort.${sort}`)}</span>
         {sortOptionsVisible ?
             <div className={styles.images_sort_options}>
-                <li className={styles.images_sort_option} onClick={HandleSelectSort} data-value={ImgstorImage.SORT.NEWEST}>{t("images_sort_newest")}</li>
-                <li className={styles.images_sort_option} onClick={HandleSelectSort} data-value={ImgstorImage.SORT.OLDEST}>{t("images_sort_oldest")}</li>
-                <li className={styles.images_sort_option} onClick={HandleSelectSort} data-value={ImgstorImage.SORT.DEFAULT}>{t("images_sort_default")}</li>
+                <li className={styles.images_sort_option} onClick={HandleSelectSort} data-value={ImgstorImage.SORT.NEWEST}>{t("image.sort.newest")}</li>
+                <li className={styles.images_sort_option} onClick={HandleSelectSort} data-value={ImgstorImage.SORT.OLDEST}>{t("image.sort.oldest")}</li>
+                <li className={styles.images_sort_option} onClick={HandleSelectSort} data-value={ImgstorImage.SORT.DEFAULT}>{t("image.sort.default")}</li>
             </div> :
             <></>
         }
