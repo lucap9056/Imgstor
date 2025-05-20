@@ -217,7 +217,6 @@ const Uploader: React.FC = () => {
             }
         }
         catch (err) {
-            console.error(err);
             notifications.Append(
                 new Message({
                     type: Message.Type.ERROR,

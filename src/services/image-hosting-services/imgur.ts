@@ -48,28 +48,33 @@ export default class Imgur {
             body: form,
         });
 
-        if (!res.ok) {
-            throw res.text().then((text) => new Error(text));
+        const result = await res.json();
+
+        if (IsImgurNotSuccessResult(result)) {
+            throw new Error(result.data.error);
         }
 
-        const result = await res.json().then((r) => r as ImgurResult);
 
-        return {
-            imageId: "",
-            name: imageFile.original.file.name,
-            mimeType: imageFile.original.file.type,
-            width: result.data.width.toString(),
-            height: result.data.height.toString(),
-            imageUrl: result.data.link,
-            previewUrl: `https://i.imgur.com/${result.data.id}m.jpg`,
-            deleteImageUrl: result.data.deletehash,
-            deletePreviewUrl: "",
-            title: ImgstorDB.EncodeText(imageFile.title),
-            description: ImgstorDB.EncodeText(imageFile.description),
-            createTime: new Date().getTime().toString(),
-            fileId: "",
-            hostingServiceId: hostingServiceId,
-        };
+        if (IsImgurSuccessResult(result)) {
+            return {
+                imageId: "",
+                name: imageFile.original.file.name,
+                mimeType: imageFile.original.file.type,
+                width: result.data.width.toString(),
+                height: result.data.height.toString(),
+                imageUrl: result.data.link,
+                previewUrl: `https://i.imgur.com/${result.data.id}m.jpg`,
+                deleteImageUrl: result.data.deletehash,
+                deletePreviewUrl: "",
+                title: ImgstorDB.EncodeText(imageFile.title),
+                description: ImgstorDB.EncodeText(imageFile.description),
+                createTime: new Date().getTime().toString(),
+                fileId: "",
+                hostingServiceId: hostingServiceId,
+            };
+        }
+
+        throw new Error("Unexpected response format from Imgur API.");
     }
 
     public Delete(image: ImgstorImage): Promise<void> {
@@ -92,7 +97,23 @@ export default class Imgur {
     }
 }
 
-export type ImgurResult = {
+function IsImgurSuccessResult(obj: any): obj is ImgurSuccessResult {
+    if (typeof obj.data !== "object") {
+        return false;
+    }
+
+    if (typeof obj.status !== "number") {
+        return false;
+    }
+
+    if (typeof obj.success !== "boolean") {
+        return false;
+    }
+
+    return obj.success === true;
+}
+
+type ImgurSuccessResult = {
     data: {
         account_id: string | null
         account_url: string | null
@@ -125,5 +146,29 @@ export type ImgurResult = {
         width: number
     },
     status: number,
-    success: boolean
+    success: true
+}
+
+function IsImgurNotSuccessResult(obj: any): obj is ImgurNotSuccessResult {
+    if (typeof obj.data !== "object") {
+        return false;
+    }
+
+    if (typeof obj.status !== "number") {
+        return false;
+    }
+
+    if (typeof obj.success !== "boolean") {
+        return false;
+    }
+
+    return obj.success === false;
+}
+
+type ImgurNotSuccessResult = {
+    data: {
+        error: string
+    },
+    status: number,
+    success: false
 }
