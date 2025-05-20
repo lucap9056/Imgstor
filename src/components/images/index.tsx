@@ -37,6 +37,9 @@ const Images: React.FC = () => {
     const [searchOffset, SetSearchOffset] = useState(0);
     const [hasMoreImages, SetHasMoreImages] = useState(false);
     const [columnCount, SetColumnCount] = useState(GetColumnCount());
+    const [shouldRender, SetShouldRender] = useState(true);
+    const [resizeTimeoutId, SetResizeTimeoutId] = useState<NodeJS.Timeout | null>(null);
+
 
     useEffect(() => {
         const { title, sort } = searchContent;
@@ -80,7 +83,19 @@ const Images: React.FC = () => {
         }
 
         const WindowResizeHandler = () => {
-            SetColumnCount(GetColumnCount());
+            SetShouldRender(false);
+
+            if (resizeTimeoutId) {
+                clearTimeout(resizeTimeoutId);
+            }
+
+            const timeoutId = setTimeout(() => {
+                SetColumnCount(GetColumnCount());
+                SetShouldRender(true);
+            }, 300);
+
+            SetResizeTimeoutId(timeoutId);
+
         };
 
         imgstor.DB.on("ImageUpdated", ImageUpdatedHandler);
@@ -100,7 +115,7 @@ const Images: React.FC = () => {
     }
 
     return <>
-        <div className={styles.images} >
+        <div className={styles.images}>
 
             <style>
                 {`
@@ -110,7 +125,7 @@ const Images: React.FC = () => {
             </style>
 
             <div className={styles.images_main}>
-                {images.map(
+                {shouldRender && images.map(
                     (image, i, images) => {
                         const onload = (hasMoreImages && i + 1 === images.length) ? HandleLoadMoreIamges : undefined;
                         return <ImageComponenet key={image.imageId + image.title} image={image} onload={onload} />;

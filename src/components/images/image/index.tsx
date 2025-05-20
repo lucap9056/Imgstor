@@ -23,10 +23,16 @@ const ImageComponenet: React.FC<Props> = ({ image, onload }) => {
     const { t } = useTranslation();
     const imgstor = useImgstor();
     const navigate = useNavigate();
-    const [title, SetTitle] = useState(image.title);
+
+    const hostingService = imgstor.AvailableHostingServices[image.hostingServiceId];
+
+    const [title] = useState(
+        hostingService ?
+            ImgstorDB.DecodeText(image.title) :
+            t("image.hosting-service.not-found", { hostingService: image.hostingServiceId })
+    );
     const [preview, SetPreview] = useState<string>();
     const [invalidImageUrl, SetInvalidImageUrl] = useState<string>();
-    const hostingService = imgstor.AvailableHostingServices[image.hostingServiceId];
 
     const { ref, inView } = useInView({
         triggerOnce: true,
@@ -34,25 +40,17 @@ const ImageComponenet: React.FC<Props> = ({ image, onload }) => {
     });
 
     useEffect(() => {
-        const fetchPreview = async () => {
-            if (hostingService === undefined) {
-                SetTitle(
-                    t("image.hosting-service.not-found", { hostingService: image.hostingServiceId })
-                );
-                return;
-            }
+        if (!inView || !hostingService) return;
 
+        (async () => {
             const url = await hostingService.Preview(image);
             SetPreview(url);
             if (onload) {
                 onload();
             }
-        };
+        })();
 
-        if (inView) {
-            fetchPreview();
-        }
-    }, [inView, hostingService, image, onload]);
+    }, [inView]);
 
     useEffect(() => {
         if (invalidImageUrl) {
@@ -138,7 +136,7 @@ const ImageComponenet: React.FC<Props> = ({ image, onload }) => {
         }
 
         {title && <div className={styles.image_title} onClick={HandleFocusView}>
-            {ImgstorDB.DecodeText(title)}
+            {title}
         </div>
         }
 
