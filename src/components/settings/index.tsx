@@ -35,12 +35,10 @@ const SettingsComponent: React.FC = () => {
                 <div className={`${styles.settings_pages_option} ${index_styles.button}`} onClick={Back}>{t("main.back")}</div>
             </div>
 
-            <div className={styles.settings_page_container}>
-                <Routes>
-                    <Route path={RoutePaths.SETTING_HOSTING_SERVICES} element={<HostingServices />}></Route>
-                    <Route path={RoutePaths.SETTING_STORAGE} element={<Storage />} />
-                </Routes>
-            </div>
+            <Routes>
+                <Route path={RoutePaths.SETTING_HOSTING_SERVICES} element={<HostingServices />}></Route>
+                <Route path={RoutePaths.SETTING_STORAGE} element={<Storage />} />
+            </Routes>
 
         </div>
     </div>;

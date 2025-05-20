@@ -38,7 +38,11 @@ const Menu: React.FC = () => {
 
     const HandleSettingsDisplay = () => {
         imgstor.Settings.Display = true;
-        navigate(RoutePaths.SETTINGS + RoutePaths.SETTING_HOSTING_SERVICES);
+        if (window.matchMedia('(max-width: 48rem)').matches) {
+            navigate(RoutePaths.SETTINGS);
+        } else {
+            navigate(RoutePaths.SETTINGS + RoutePaths.SETTING_HOSTING_SERVICES);
+        }
     }
 
     const HandleImgstorSignOut = () => {

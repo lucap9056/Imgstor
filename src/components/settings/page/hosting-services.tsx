@@ -1,5 +1,8 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
+
+import RoutePaths from "route-paths";
 
 import Block from "components/settings/blocks";
 import Textbox from "components/settings/blocks/textbox";
@@ -50,6 +53,7 @@ const SettingHostingServices: React.FC = () => {
     const loadingState = useLoadingState();
     const { t } = useTranslation();
     const imgstor = useImgstor();
+    const navigate = useNavigate();
     const { local, importExternal, imgur, catbox, smms } = imgstor.Settings.Config.hostingServices;
 
 
@@ -112,97 +116,104 @@ const SettingHostingServices: React.FC = () => {
         }
     }
 
-    return <form className={styles.settings_page} onSubmit={HandleSave}>
-        <Block title={t("settings.hosting-service.title.local")} visible={false}>
+    const HandleBack = () => {
+        navigate(RoutePaths.SETTINGS);
+    }
 
-            <Label>{t("settings.hosting-service.description.local")}</Label>
-            <Toggle
-                label={t("settings.hosting-service.enable")}
-                name={NAMES.LOCAL_ENABLE}
-                value={local.isEnabled}
-            />
+    return <div className={styles.settings_page}>
+        <form className={styles.settings_page_main} onReset={HandleBack} onSubmit={HandleSave}>
+            <Block title={t("settings.hosting-service.title.local")} visible={false}>
 
-        </Block>
-        <Block title={t("settings.hosting-service.title.import")} visible={false}>
+                <Label>{t("settings.hosting-service.description.local")}</Label>
+                <Toggle
+                    label={t("settings.hosting-service.enable")}
+                    name={NAMES.LOCAL_ENABLE}
+                    value={local.isEnabled}
+                />
 
-            <Label>{t("settings.hosting-service.description.import")}</Label>
-            <Toggle
-                label={t("settings.hosting-service.enable")}
-                name={NAMES.IMPORT_ENABLE}
-                value={importExternal.isEnabled}
-            />
+            </Block>
+            <Block title={t("settings.hosting-service.title.import")} visible={false}>
 
-        </Block>
-        <Block title={t("settings.hosting-service.title.imgur")}>
+                <Label>{t("settings.hosting-service.description.import")}</Label>
+                <Toggle
+                    label={t("settings.hosting-service.enable")}
+                    name={NAMES.IMPORT_ENABLE}
+                    value={importExternal.isEnabled}
+                />
 
-            <Toggle
-                label={t("settings.hosting-service.enable")}
-                name={NAMES.IMGUR_ENABLE}
-                value={imgur.isEnabled}
-            />
-            <Textbox
-                label={t("settings.hosting-service.client-id")}
-                name={NAMES.IMGUR_CLIENT_ID}
-                password={true}
-                value={imgur.clientId}
-            />
+            </Block>
+            <Block title={t("settings.hosting-service.title.imgur")}>
 
-        </Block>
-        <Block title={t("settings.hosting-service.title.catbox")}>
+                <Toggle
+                    label={t("settings.hosting-service.enable")}
+                    name={NAMES.IMGUR_ENABLE}
+                    value={imgur.isEnabled}
+                />
+                <Textbox
+                    label={t("settings.hosting-service.client-id")}
+                    name={NAMES.IMGUR_CLIENT_ID}
+                    password={true}
+                    value={imgur.clientId}
+                />
 
-            <Toggle
-                label={t("settings.hosting-service.enable")}
-                name={NAMES.CATBOX_ENABLE}
-                value={catbox.isEnabled}
-            />
-            <Textbox
-                label={t("settings.hosting-service.proxy")}
-                name={NAMES.CATBOX_PROXY}
-                value={catbox.proxy}
-            />
-            <Textbox
-                label={t("settings.hosting-service.userhash")}
-                name={NAMES.CATBOX_USERHASH}
-                password={true}
-                value={catbox.userhash}
-            />
-            <Toggle label={t("settings.hosting-service.separate-preview")}
-                name={NAMES.CATBOX_SEPARATE_PREVIEW}
-                value={catbox.separatePreviewUpload}
-            ></Toggle>
+            </Block>
+            <Block title={t("settings.hosting-service.title.catbox")}>
 
-        </Block>
-        <Block title={t("settings.hosting-service.title.sm-ms")}>
+                <Toggle
+                    label={t("settings.hosting-service.enable")}
+                    name={NAMES.CATBOX_ENABLE}
+                    value={catbox.isEnabled}
+                />
+                <Textbox
+                    label={t("settings.hosting-service.proxy")}
+                    name={NAMES.CATBOX_PROXY}
+                    value={catbox.proxy}
+                />
+                <Textbox
+                    label={t("settings.hosting-service.userhash")}
+                    name={NAMES.CATBOX_USERHASH}
+                    password={true}
+                    value={catbox.userhash}
+                />
+                <Toggle label={t("settings.hosting-service.separate-preview")}
+                    name={NAMES.CATBOX_SEPARATE_PREVIEW}
+                    value={catbox.separatePreviewUpload}
+                ></Toggle>
 
-            <Toggle
-                label={t("settings.hosting-service.enable")}
-                name={NAMES.SMMS_ENABLE}
-                value={smms.isEnabled}
-            />
-            <Textbox
-                label={t("settings.hosting-service.proxy")}
-                name={NAMES.SMMS_PROXTY}
-                value={smms.proxy}
-            />
-            <Textbox
-                label={t("settings.hosting-service.api-token")}
-                name={NAMES.SMMS_TOKEN}
-                password={true}
-                value={smms.token}
-            />
-            <Toggle
-                label={t("settings.hosting-service.separate-preview")}
-                name={NAMES.SMMS_SEPARATE_PREVIEW}
-                value={smms.separatePreviewUpload}
-            />
+            </Block>
+            <Block title={t("settings.hosting-service.title.sm-ms")}>
 
-        </Block>
+                <Toggle
+                    label={t("settings.hosting-service.enable")}
+                    name={NAMES.SMMS_ENABLE}
+                    value={smms.isEnabled}
+                />
+                <Textbox
+                    label={t("settings.hosting-service.proxy")}
+                    name={NAMES.SMMS_PROXTY}
+                    value={smms.proxy}
+                />
+                <Textbox
+                    label={t("settings.hosting-service.api-token")}
+                    name={NAMES.SMMS_TOKEN}
+                    password={true}
+                    value={smms.token}
+                />
+                <Toggle
+                    label={t("settings.hosting-service.separate-preview")}
+                    name={NAMES.SMMS_SEPARATE_PREVIEW}
+                    value={smms.separatePreviewUpload}
+                />
 
-        <div className={styles.settings_page_separator}></div>
-        <div className={styles.settings_page_options}>
-            <button className={styles.settings_page_option} type="submit">{t("main.save")}</button>
-        </div>
-    </form>
+            </Block>
+
+            <div className={styles.settings_page_separator}></div>
+            <div className={styles.settings_page_options}>
+                <button className={styles.settings_page_option} data-mobile="true" type="reset">{t("main.back")}</button>
+                <button className={styles.settings_page_option} type="submit">{t("main.save")}</button>
+            </div>
+        </form>
+    </div>
 }
 
 

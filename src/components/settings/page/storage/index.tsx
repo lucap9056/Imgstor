@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
+
+import RoutePaths from "route-paths";
 
 import Block from "components/settings/blocks";
 import { useLoadingState } from "components/loading";
@@ -22,6 +25,7 @@ const SettingStorage: React.FC = () => {
     const imgstor = useImgstor();
     const [usedStorage, SetUsedStorage] = useState<number>(0);
     const [loaded, SetLoaded] = useState(false);
+    const navigate = useNavigate();
 
     const HandleLoad = async () => {
         const loading = loadingState.Append();
@@ -149,42 +153,53 @@ const SettingStorage: React.FC = () => {
 
     }
 
+    const HandleBack = () => {
+        navigate(RoutePaths.SETTINGS);
+    }
+
     return <div className={styles.settings_page}>
+        <div className={styles.settings_page_main}>
 
-        <Block title={t("settings.storage.used", { used: FileSizeFormat(usedStorage) })}>
+            <Block title={t("settings.storage.used", { used: FileSizeFormat(usedStorage) })}>
+
+                <div className={styles.settings_page_options}>
+
+                    {loaded && usedStorage > 0 &&
+                        <button className={styles.settings_page_option} type="button" onClick={HnadleClear}>
+                            {t("settings.storage.clear")}
+                        </button>
+                    }
+
+                    {!loaded &&
+                        <button className={styles.settings_page_option} type="button" onClick={HandleLoad}>
+                            {t("settings.storage.load")}
+                        </button>
+                    }
+
+                </div>
+
+            </Block>
+
+            <Block title={t("settings.storage.hosting-service")}>
+                <div className={styles.settings_page_options}>
+
+                    <button className={styles.settings_page_option} type="button" onClick={HandleExportHostingService}>
+                        {t("settings.storage.export")}
+                    </button>
+
+                    <button className={styles.settings_page_option} type="button" onClick={HandleImportHostingService}>
+                        {t("settings.storage.import")}
+                    </button>
+
+                </div>
+            </Block>
 
             <div className={styles.settings_page_options}>
-
-                {loaded && usedStorage > 0 &&
-                    <button className={styles.settings_page_option} type="button" onClick={HnadleClear}>
-                        {t("settings.storage.clear")}
-                    </button>
-                }
-
-                {!loaded &&
-                    <button className={styles.settings_page_option} type="button" onClick={HandleLoad}>
-                        {t("settings.storage.load")}
-                    </button>
-                }
-
-            </div>
-
-        </Block>
-
-        <Block title={t("settings.storage.hosting-service")}>
-            <div className={styles.settings_page_options}>
-
-                <button className={styles.settings_page_option} type="button" onClick={HandleExportHostingService}>
-                    {t("settings.storage.export")}
+                <button className={styles.settings_page_option} data-mobile="true" type="reset" onClick={HandleBack}>
+                    {t("main.back")}
                 </button>
-
-                <button className={styles.settings_page_option} type="button" onClick={HandleImportHostingService}>
-                    {t("settings.storage.import")}
-                </button>
-
             </div>
-        </Block>
-
+        </div>
     </div>
 }
 
