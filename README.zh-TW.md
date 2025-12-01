@@ -1,3 +1,4 @@
+[English](README.md) | [中文](README.zh-TW.md)
 # Imgstor
 
 Imgstor 主要利用您的 Google Drive 作為安全且私密的備份空間，讓您能輕鬆管理和保存所有珍貴的圖片。您的資料，完全由您掌控。

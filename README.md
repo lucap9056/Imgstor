@@ -1,3 +1,4 @@
+[English](README.md) | [中文](README.zh-TW.md)
 # Imgstor
 
 Imgstor primarily uses your Google Drive as a secure and private backup space, allowing you to easily manage and save all your precious images. Your data is under your control.
