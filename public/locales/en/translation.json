@@ -1,7 +1,7 @@
 {
     "app": {
         "name": "Imgstor",
-        "description": "Imgstor is a backend-free tool for easy management of images across multiple image hosting platforms."
+        "description": "Your personal image manager. Imgstor turns your Google Drive into a powerful image library, allowing you to easily upload, manage, and publish to your chosen hosting service. Your data is under your control."
     },
     "google": {
         "loading": "Loading Google API...",

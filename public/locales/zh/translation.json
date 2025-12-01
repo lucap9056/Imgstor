@@ -1,6 +1,6 @@
 {
   "app.name": "Imgstor",
-  "app.description": "Imgstor 是一款無需後端的工具，可輕鬆管理多個圖片託管平台的圖片。",
+  "app.description": "您的私人圖片管家。Imgstor 將您的 Google Drive 變成一個強大的圖片資料庫，讓您輕鬆上傳、管理，並發佈到您選擇的託管服務。資料由您掌控。",
   "google.loading": "Google API 載入中...",
   "google.signin": "使用 Google 帳戶登入",
   "google.signin.fail": "登入失敗",
