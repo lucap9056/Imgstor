@@ -1,0 +1,48 @@
+.image_tags {
+    position: relative;
+    border-radius: 8px;
+    background: #f4f6fb;
+    overflow: auto;
+    display: flex;
+    flex-flow: row;
+    box-shadow: 1px 1px 3px 3px #5b5b5b99;
+    margin: 1rem auto;
+    max-width: 48rem;
+
+    @media (max-width: 48rem) {
+        margin: 1rem 0.5rem;
+    }
+
+    .icon {
+        width: 1.5rem;
+        overflow: hidden;
+        background: #87b8f6;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .tags {
+        position: relative;
+        min-height: 1.625rem;
+        flex: 1;
+
+        .tag {
+            user-select: none;
+            position: relative;
+            padding: 0 0.3125rem;
+            background-color: #f6f2f0;
+            border-radius: 4px;
+            font-size: 0.8125rem;
+            float: left;
+            margin: 0.125rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: solid 2px #9397be;
+            color: #6b8ae7;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    }
+}

@@ -1,0 +1,67 @@
+.settings_page {
+    position: relative;
+    flex: 1;
+    margin-left: -0.4375rem;
+    border-radius: 0.4375rem;
+    background: #afcff1;
+
+    @media (max-width: 48rem) {
+        position: absolute;
+        top: 0;
+        left: 1rem;
+        right: 0;
+        bottom: 0;
+        overflow-y: auto;
+        margin-left: -1rem;
+    }
+
+    .settings_page_main {
+        display: flex;
+        flex-flow: column;
+        padding: 0.625rem;
+        min-height: 18.75rem;
+        max-height: 80vh;
+        gap: 0.625rem;
+
+        @media (max-width: 48rem) {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-flow: column;
+            padding: 0.625rem;
+            max-height: unset;
+        }
+
+        .settings_page_options {
+            display: flex;
+            gap: 1.25rem;
+            margin-top: 0.625rem;
+            justify-content: center;
+
+            .settings_page_option {
+                box-shadow: 0 0.25rem 0.5rem #0003;
+                font-size: 1rem;
+                padding: 0.25rem 0.5rem;
+                font-weight: bold;
+                width: 5rem;
+
+                @media (min-width: 48rem) {
+                    &[data-mobile="true"] {
+                        display: none;
+                    }
+                }
+            }
+        }
+
+        .settings_page_separator {
+            height: 1px;
+            width: calc(100% - 1rem);
+            background-color: #ffffffa6;
+            margin: 0 auto;
+        }
+
+    }
+}

@@ -1,0 +1,16 @@
+.block {
+    overflow: hidden;
+    border-radius: 12px;
+    padding: 5px;
+
+    &::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 5px;
+        border-radius: 12px;
+        box-shadow: 0 0 0 5px rgba(87, 95, 102, 0.32);
+    }
+}

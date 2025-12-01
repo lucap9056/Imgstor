@@ -1,0 +1,79 @@
+.container {
+    position: relative;
+    overflow-y: auto;
+    flex: 1;
+
+    .images {
+
+        padding: 1.25rem;
+        gap: 1rem;
+        margin: 0 auto;
+
+        column-count: calc(var(--image-column-count) / 1.5);
+        column-gap: 0.625rem;
+
+        @media (max-width: 48rem) {
+            padding: 0.625rem 1.25rem 5rem;
+            column-count: var(--image-column-count);
+        }
+
+        .image {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+
+            box-sizing: border-box;
+            margin: 0 auto 5px;
+            break-inside: avoid;
+            background-size: 1rem 1rem;
+            background-image: repeating-conic-gradient(transparent 0 25%, #cfcfcf 0 50%);
+            background-color: #fff;
+            background-position: 0.5rem 0.5rem;
+            box-shadow: 0 0 10px 0 #1a1c1ec4;
+            transition-duration: 250ms;
+
+            &:hover {
+                scale: 1.02;
+            }
+
+            .image_preview {
+                width: 100%;
+                object-fit: cover;
+                border-radius: 5px;
+                object-position: 50% 50%;
+            }
+
+            .image_title {
+                color: #f2edff;
+                font-size: 0.875rem;
+                padding: 0.3125rem;
+                border-radius: 4px;
+                text-wrap: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .image_copy_link {
+                position: absolute;
+                top: 0.25rem;
+                right: 0.25rem;
+                color: white;
+                cursor: pointer;
+                background: rgba(0, 0, 0, 0.5);
+                border-radius: 4px;
+                width: 1.6rem;
+                height: 1.6rem;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+
+                &:hover {
+                    background-color: rgba(0, 0, 0, 0.8);
+                }
+
+            }
+        }
+    }
+}

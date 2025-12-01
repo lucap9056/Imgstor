@@ -1,0 +1,20 @@
+.setting_block_textbox {
+    display: flex;
+    flex-flow: row;
+    align-items: center;
+    margin: 0.3125rem 0;
+
+    .setting_block_textbox_label {
+        margin-right: 0.5rem;
+        min-width: 4.375rem;
+        text-align: right;
+    }
+
+    .setting_block_textbox_input {
+        border: none;
+        border-radius: 4px;
+        padding: 0.25rem 0.625rem;
+        outline: none;
+        flex: 1;
+    }
+}
