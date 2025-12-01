@@ -53,7 +53,7 @@ jobs:
 
       - name: Compile Rust WebAssembly (Wasm)
         run: |
-          cd src/services/imgproc/wasm
+          cd src/services/converter/imgproc/wasm
           export CC=/usr/bin/gcc
           wasm-pack build --release --target web
 
