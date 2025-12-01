@@ -1,0 +1,17 @@
+.tag {
+    user-select: none;
+    position: relative;
+    padding: 0 0.3125rem;
+    background-color: #f6f2f0;
+    border-radius: 4px;
+    font-size: 0.8125rem;
+    float: left;
+    margin: 0.125rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: solid 2px #9397be;
+    color: $light-button-color;
+    font-weight: bold;
+    cursor: pointer;
+}

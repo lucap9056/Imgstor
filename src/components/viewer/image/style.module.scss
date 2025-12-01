@@ -1,0 +1,69 @@
+.image {
+    position: relative;
+    display: flex;
+    max-width: 48rem;
+    max-height: 80vh;
+    transition-duration: 125ms;
+    margin: auto;
+    box-shadow: 0 0 10px #525155;
+
+    @media (max-width: 48rem) {
+        position: relative;
+        display: flex;
+        flex-flow: column;
+        gap: 0.625rem;
+        max-height: unset;
+    }
+
+    img {
+        overflow: hidden;
+        flex: 1;
+        filter: blur(1rem);
+        object-fit: contain;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        transition-duration: 250ms;
+        background-size: 1rem 1rem;
+        background-image: repeating-conic-gradient(transparent 0 25%, #cfcfcf 0 50%);
+        background-color: #fff;
+
+        @media (max-width: 48rem) {
+            flex: none;
+            object-fit: contain;
+        }
+    }
+
+    &[data-loaded="true"] {
+        img {
+            opacity: 1;
+            filter: unset;
+        }
+    }
+
+    &[data-loaded="false"]::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        border-style: solid;
+        border-width: 0.15rem;
+        border-color: #fff transparent #ffffff42 #ffffffb5;
+        border-radius: 100%;
+        width: 4rem;
+        height: 4rem;
+        animation: rotate 1s infinite linear;
+        filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.5));
+
+        @keyframes rotate {
+            0% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+
+            100% {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+    }
+}

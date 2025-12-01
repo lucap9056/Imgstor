@@ -1,0 +1,4 @@
+pkg
+target
+build.sh
+Cargo.lock

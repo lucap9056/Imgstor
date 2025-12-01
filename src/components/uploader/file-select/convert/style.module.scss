@@ -1,0 +1,29 @@
+.message {
+    position: relative;
+
+    .current_format {
+        background-color: #8977e0;
+        border-radius: 5px;
+        padding: 0 0.625rem;
+    }
+
+    .format_list {
+        position: absolute;
+        background-color: #7b6aca;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100%;
+        list-style: none;
+        padding: 0.625rem;
+        border-radius: 7px;
+
+        .format {
+            border-radius: 4px;
+
+            &:hover {
+                background-color: #5b41d7;
+            }
+        }
+    }
+}

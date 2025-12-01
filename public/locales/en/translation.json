@@ -1,0 +1,174 @@
+{
+    "app": {
+        "name": "Imgstor",
+        "description": "Imgstor is a backend-free tool for easy management of images across multiple image hosting platforms."
+    },
+    "google": {
+        "loading": "Loading Google API...",
+        "signin": {
+            "label": "Sign in with Google",
+            "failed": "Sign in failed"
+        }
+    },
+    "main": {
+        "confirm": "Confirm",
+        "cancel": "Cancel",
+        "save": "Save",
+        "saving": "Saving...",
+        "back": "Back",
+        "post": "Post",
+        "abort": "Abort",
+        "delete": "Delete"
+    },
+    "menu": {
+        "settings": "Settings",
+        "signout": "Sign out"
+    },
+    "settings": {
+        "option": {
+            "hosting-service": "Image Hosting Service",
+            "storage": "Storage"
+        },
+        "hosting-service": {
+            "description": {
+                "local": "Test mode: files will not be uploaded, but downloaded directly to local storage",
+                "import": "Import external images"
+            },
+            "title": {
+                "local": "Local",
+                "import": "Import",
+                "imgur": "Imgur",
+                "catbox": "Catbox",
+                "sm-ms": "SM.MS"
+            },
+            "enable": "Enable",
+            "client-id": "Client ID",
+            "proxy": "Proxy",
+            "userhash": "User Hash",
+            "api-token": "API Token",
+            "separate-preview": "Upload Preview Separately"
+        },
+        "storage": {
+            "used": "Used: {{used}}",
+            "load": "Load",
+            "clear": "Clear",
+            "hosting-service": "Hosting service",
+            "export": "Export config",
+            "import": "Import config",
+            "notification": {
+                "clearing": "Clearing storage...",
+                "cleared": "Storage cleared successfully."
+            },
+            "alert": {
+                "clear": "Are you sure you want to clear all stored data?"
+            }
+        }
+    },
+    "tags-selecter": {
+        "tag": {
+            "create": {
+                "label": "Create tag"
+            },
+            "remove": {
+                "label": "Remove tag",
+                "drop": "Drag here to remove"
+            }
+        },
+        "alert": {
+            "remove-tag": "Are you sure you want to remove {{name}}?"
+        }
+    },
+    "uploader": {
+        "label": {
+            "hosting-service": "Image Hosting Service:",
+            "title": "Title",
+            "description": "Description",
+            "select-save": "Save:",
+            "selected-tags": "Selected Tags"
+        },
+        "import": {
+            "label": {
+                "image-url": "Enter image URL",
+                "preview-url": "Enter preview URL"
+            }
+        },
+        "file": {
+            "drag": "Drag files here",
+            "select": "Click to select files",
+            "remove": "Remove file",
+            "format": {
+                "not-supported": "Unsupported file format"
+            },
+            "preview": {
+                "not-supported": "Unsupported file preview"
+            },
+            "notification": {
+                "aniation-detecting": "Detecting animation...",
+                "transcoding": "Transcoding...",
+                "converted-size": "Converted size: {{originalSize}} -> {{processedSize}}"
+            },
+            "alert": {
+                "converter": {
+                    "animation": "Convert file using built-in tool?",
+                    "animation.ex": "For best quality, try external tools.",
+                    "animation.target": "Transcoding target format:"
+                }
+            }
+        },
+        "notification": {
+            "uploading": "Uploading image...",
+            "saving": "Saving image...",
+            "save-failed": "Failed to save image.",
+            "uploaded": "Image uploaded.",
+            "link-copied": "Image link copied."
+        },
+        "alert": {
+            "upload": "Are you sure you want to upload?"
+        },
+        "copy-link": "Copy link"
+    },
+    "image": {
+        "sort": {
+            "newest": "Newest",
+            "oldest": "Oldest",
+            "default": "Default"
+        },
+        "preview": {
+            "failed": "Failed to preview image"
+        },
+        "hosting-service": {
+            "not-found": "Image hosting service ID not found: {{hostingService}}."
+        }
+    },
+    "viewer": {
+        "option": {
+            "delete": "Delete",
+            "open": "Open in new tab",
+            "copy-link": "Copy link",
+            "download": "Download",
+            "reupload": "Reupload",
+            "back": "Back"
+        },
+        "label": {
+            "tags": "Tags"
+        },
+        "alert": {
+            "delete": "Are you sure you want to delete this image?",
+            "change-title": "Are you sure you want to change the title?",
+            "change-description": "Are you sure you want to change the description?",
+            "downloading": "Downloading image...",
+            "reupload": "Are you sure you want to reupload?"
+        },
+        "notifiaction": {
+            "deleting": "Deleting image...",
+            "link-copied": "Image link copied.",
+            "not-stored": "The original file of this image is not stored in the database."
+        }
+    },
+    "search": {
+        "label": {
+            "tags": "Select tags",
+            "reset": "Reset filter"
+        }
+    }
+}

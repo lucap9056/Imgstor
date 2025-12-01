@@ -1,0 +1,51 @@
+.setting_block_toggle {
+    display: flex;
+    flex-flow: row;
+    align-items: center;
+    margin: 0.3125rem 0;
+
+    .setting_block_toggle_label {
+        margin-right: 0.5rem;
+        min-width: 4.375rem;
+        text-align: right;
+    }
+
+    .setting_block_toggle_value {
+        width: 3rem;
+        height: 1.625rem;
+        background-color: #fff;
+        border-radius: 0.75rem;
+        position: relative;
+        box-shadow: 0 0 0.1875rem #000 inset;
+
+        &::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            margin: 0.125rem;
+            width: 1.125rem;
+            height: 1.125rem;
+            border: solid 0.125rem #a8a8a8;
+            border-radius: 1.125rem;
+            background-color: #f0f0f0;
+            transition-duration: 250ms;
+        }
+
+
+        &:active::before {
+            width: 1.6875rem;
+        }
+
+        &[data-enabled="true"] {
+            &::before {
+                left: calc(100% - 1.625rem);
+                background-color: #65b0ff;
+
+            }
+
+            &:active::before {
+                left: calc(100% - 2.1875rem);
+            }
+        }
+    }
+}

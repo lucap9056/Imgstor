@@ -1,0 +1,16 @@
+.transcoding {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    font-family: consolas;
+    padding: 0.625rem;
+    background-color: rgba(19, 18, 33, 0.5490196078);
+    backdrop-filter: blur(3px);
+    border: none;
+    color: #fff;
+    outline: none;
+    resize: none;
+}

@@ -1,0 +1,72 @@
+.settings_container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    display: flex;
+
+    .settings {
+        min-width: 37.5rem;
+        margin: auto;
+        border-radius: 0.4375rem;
+        max-width: 100vw;
+        max-height: 100vh;
+        display: flex;
+        flex-flow: row;
+        box-shadow: 0 0 0.5rem #4c3f69;
+
+        @media (max-width: 48rem) {
+            width: 100%;
+            height: 100%;
+            border-radius: 0;
+        }
+
+        .settings_pages {
+            min-width: 8.75rem;
+            display: flex;
+            flex-flow: column;
+            border-radius: 0.4375rem 0 0 0.4375rem;
+            padding: 0.3125rem 0;
+            padding-right: 1rem;
+            background: #5498e0;
+
+            @media (max-width: 48rem) {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                overflow-y: auto;
+                padding: 1rem 0;
+                text-align: center;
+            }
+
+            a {
+                color: #fff;
+                text-decoration: none;
+                font-weight: bold;
+            }
+
+            .settings_pages_option {
+                padding: 0.3125rem 0.625rem;
+                cursor: default;
+                user-select: none;
+
+
+            }
+
+            .settings_interval {
+                flex-grow: 1;
+            }
+
+            button {
+                background: transparent;
+                font-weight: bold;
+                font-size: 1rem;
+            }
+        }
+
+    }
+}

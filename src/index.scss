@@ -1,0 +1,64 @@
+@import url('https://fonts.cdnfonts.com/css/budokan-rounded');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@100..900&family=Poetsen+One&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap');
+
+html {
+  font-size: 16px;
+  min-height: 100vh;
+}
+
+body {
+  background-color: $light-background-color;
+  color: $light-text-color;
+  margin: 0;
+  padding: 0;
+  font-family: $primary-font-family;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  display: flex;
+  flex-flow: row-reverse;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+}
+
+button,
+.button {
+  font-family: $button-font-family;
+  border: none;
+  border-radius: 4px;
+  fill: $light-button-text-color;
+  color: $light-button-text-color;
+  cursor: pointer;
+  transition-duration: 0.3s;
+  background-color: $light-button-color;
+
+  &:hover {
+    background-color: $light-button-hover-color;
+    scale: 1.03;
+  }
+
+  &:active {
+    background-color: $light-button-active-color;
+    scale: 0.98;
+  }
+}
+
+input[type='text'] {
+  background: $light-input-background-color;
+  font-family: $primary-font-family;
+}
+
+textarea {
+  font-family: $primary-font-family;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
