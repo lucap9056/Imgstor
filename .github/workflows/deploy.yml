@@ -41,6 +41,22 @@ jobs:
       - name: Install dependencies
         run: bun install
         
+      - name: Setup Rust Toolchain and Wasm Target
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: wasm32-unknown-unknown
+          override: true
+
+      - name: Install wasm-pack
+        run: cargo install wasm-pack
+
+      - name: Compile Rust WebAssembly (Wasm)
+        run: |
+          cd src/services/imgproc/wasm
+          export CC=/usr/bin/gcc
+          wasm-pack build --release --target web
+
       - name: Clean environment files from build
         run: |
           rm -f ./.env
