@@ -11,11 +11,11 @@ interface Props {
     hide: () => void
 }
 
-const SortSelecter: React.FC<Props> = ({ defaultValue, onchange, hide }) => {
+const SortSelector: React.FC<Props> = ({ defaultValue, onchange, hide }) => {
     const { t } = useTranslation();
     const [sort, setSort] = useState<Sort>(defaultValue);
     const [sortOptionsVisible, setSortOptionsVisible] = useState(false);
-    const sortSelecterRef = useRef<HTMLDivElement>(null);
+    const sortSelectorRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
 
@@ -24,7 +24,7 @@ const SortSelecter: React.FC<Props> = ({ defaultValue, onchange, hide }) => {
     }, [sort]);
 
     const sortOptionsInvisible = useCallback((e: MouseEvent) => {
-        if (sortOptionsVisible && sortSelecterRef.current && !sortSelecterRef.current.contains(e.target as Node)) {
+        if (sortOptionsVisible && sortSelectorRef.current && !sortSelectorRef.current.contains(e.target as Node)) {
             setSortOptionsVisible(false);
         }
     }, [sortOptionsVisible]);
@@ -45,7 +45,7 @@ const SortSelecter: React.FC<Props> = ({ defaultValue, onchange, hide }) => {
         hide();
     }
 
-    return <div ref={sortSelecterRef} className={styles.images_sort_select}>
+    return <div ref={sortSelectorRef} className={styles.images_sort_select}>
         <span className={styles.images_sort_selected_option} onClick={() => setSortOptionsVisible(true)}>{t(`image.sort.${sort}`)}</span>
         {sortOptionsVisible && <div className={styles.images_sort_options}>
             <li className={styles.images_sort_option} onClick={handleSelectSort} data-value={ImgstorImage.SORT.NEWEST}>{t("image.sort.newest")}</li>
@@ -56,4 +56,4 @@ const SortSelecter: React.FC<Props> = ({ defaultValue, onchange, hide }) => {
     </div>
 }
 
-export default SortSelecter;
+export default SortSelector;
