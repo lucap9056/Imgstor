@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import Imgstor from "services/imgstor";
 import { ImgstorTag } from "services/imgstor-db";
-import { TagsSelecterEvent } from "services/tags-selecter";
+import { TagsSelectorEvent } from "services/tags-selector";
 
 import componentStyles from "styles/components.module.scss";
 import styles from "./style.module.scss";
@@ -20,7 +20,7 @@ const TagsSelect: React.FC<Props> = ({ imgstor, onchange }) => {
 
     useEffect(() => {
 
-        const TagsSelectedHandler = (e: TagsSelecterEvent<"TagsSelected">) => {
+        const TagsSelectedHandler = (e: TagsSelectorEvent<"TagsSelected">) => {
             const { target, selected } = e.deteil;
             if (target !== componentId) {
                 return;
@@ -30,15 +30,15 @@ const TagsSelect: React.FC<Props> = ({ imgstor, onchange }) => {
             onchange(selected);
         }
 
-        imgstor.tagsSelecter.on("TagsSelected", TagsSelectedHandler);
+        imgstor.tagsSelector.on("TagsSelected", TagsSelectedHandler);
 
         return () => {
-            imgstor.tagsSelecter.on("TagsSelected", TagsSelectedHandler);
+            imgstor.tagsSelector.on("TagsSelected", TagsSelectedHandler);
         }
     }, []);
 
     const HandleSelectTags = () => {
-        imgstor.tagsSelecter.request(componentId, selectedTags);
+        imgstor.tagsSelector.request(componentId, selectedTags);
     }
 
     return <div className={styles.upload_tags} onClick={HandleSelectTags}>
