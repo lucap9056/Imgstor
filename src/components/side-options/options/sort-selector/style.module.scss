@@ -28,11 +28,6 @@
         border-radius: 0.1875rem;
         z-index: 1;
 
-        @media (max-width: 48rem) {
-            top: unset;
-            bottom: calc(100% + 0.625rem);
-        }
-
         &:before {
             content: "";
             top: -1.375rem;
@@ -45,11 +40,6 @@
             border-color: transparent transparent $light-button-active-color transparent;
             position: absolute;
 
-            @media (max-width: 48rem) {
-                border-color: $light-button-active-color transparent transparent transparent;
-                top: unset;
-                bottom: -1.375rem;
-            }
         }
 
         .images_sort_option {
