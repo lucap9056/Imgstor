@@ -64,7 +64,7 @@
             }
         }
     },
-    "tags-selecter": {
+    "tags-selector": {
         "tag": {
             "create": {
                 "label": "Create tag"

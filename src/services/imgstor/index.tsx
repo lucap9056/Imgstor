@@ -3,7 +3,7 @@ import Google, { Drive } from 'services/google';
 import EventDispatcher from 'structs/event-dispatcher';
 import ImgstorDB, { ImgstorTag, ImgstorImage, ImgstorImageSort } from 'services/imgstor-db';
 import Settings, { ImgstorConfig } from 'services/settings';
-import TagsSelecter from 'services/tags-selecter';
+import TagsSelector from 'services/tags-selector';
 import Local from 'services/image-hosting-services/local';
 import Imgur from 'services/image-hosting-services/imgur';
 import { ImageHostingService } from 'services/image-hosting-services';
@@ -94,7 +94,7 @@ export default class Imgstor extends EventDispatcher<ImgstorEventDefinitions> {
     private google: Google;
     public readonly settings: Settings;
     public readonly db: ImgstorDB;
-    public readonly tagsSelecter: TagsSelecter;
+    public readonly tagsSelector: TagsSelector;
     public readonly converter: Converter = new Converter();
     private filesFolder: gapi.client.drive.File;
     private imageHostingServices: AvailableHostingServicesMap = {};
@@ -104,7 +104,7 @@ export default class Imgstor extends EventDispatcher<ImgstorEventDefinitions> {
         this.settings = settings;
         this.filesFolder = filesFolder;
         this.db = db;
-        this.tagsSelecter = new TagsSelecter(db);
+        this.tagsSelector = new TagsSelector(db);
 
         settings.on("ConfigChanged", ({ detail }) => this.loadImageHostingServices(detail.config));
 

@@ -10,7 +10,7 @@ import "./i18n";
 
 import { Message } from "structs/message";
 
-import TagsSelecter from 'components/tags-selecter';
+import TagsSelector from 'components/tags-selector';
 import Settings from 'components/settings';
 import MainView from "components/viewer";
 import SignIn from "components/sign-in";
@@ -133,7 +133,7 @@ function App() {
               </Routes>
             </HashRouter>
 
-            <TagsSelecter />
+            <TagsSelector />
           </ImgstorProvider> :
           <SignIn onSignIn={HandleSignIn} />
         : <></>

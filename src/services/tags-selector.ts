@@ -10,13 +10,13 @@ type SelectResponse = SelectRequest & {
     selected: ImgstorTag[]
 }
 
-type TagsSelecterEventDefinitions = {
+type TagsSelectorEventDefinitions = {
     "TagsSelected": { deteil: SelectResponse }
     "DisplayChanged": { detail?: SelectRequest }
 };
-export type TagsSelecterEvent<T extends keyof TagsSelecterEventDefinitions> = TagsSelecterEventDefinitions[T];
+export type TagsSelectorEvent<T extends keyof TagsSelectorEventDefinitions> = TagsSelectorEventDefinitions[T];
 
-export default class TagsSelecter extends EventDispatcher<TagsSelecterEventDefinitions> {
+export default class TagsSelector extends EventDispatcher<TagsSelectorEventDefinitions> {
     private db: ImgstorDB;
     private requests: SelectRequest[] = [];
     constructor(db: ImgstorDB) {
