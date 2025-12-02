@@ -9,7 +9,7 @@ import { SearchContent, useImgstor } from "services/imgstor";
 import RoutePaths from "route-paths";
 
 import Search from "./options/search";
-import SortSelecter from "./options/sort-selecter";
+import SortSelector from "./options/sort-selector";
 
 import styles from "./style.module.scss";
 
@@ -50,7 +50,7 @@ const SideOptions: React.FC = () => {
             return;
         }
         setSidePageName(name);
-        setSidePage(<SortSelecter onchange={setSort} defaultValue={defaultSort} hide={handleHideSidePage}></SortSelecter>)
+        setSidePage(<SortSelector onchange={setSort} defaultValue={defaultSort} hide={handleHideSidePage} />)
     }
 
     const handleVisibleUploader = () => {
