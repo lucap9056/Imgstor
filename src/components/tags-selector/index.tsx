@@ -8,9 +8,9 @@ import { Message, MessageButton } from "structs/message";
 
 import { useImgstor } from "services/imgstor";
 import { ImgstorTag } from "services/imgstor-db";
-import { TagsSelecterEvent } from "services/tags-selecter";
+import { TagsSelectorEvent } from "services/tags-selector";
 
-import TagItem from "components/tags-selecter/tag-item";
+import TagItem from "components/tags-selector/tag-item";
 
 
 import componentStyles from "styles/components.module.scss";
@@ -21,7 +21,7 @@ interface DraggingPosation {
     y: number
 }
 
-const TagsSelecter: React.FC = () => {
+const TagsSelector: React.FC = () => {
     const notifications = useNotifications();
     const loader = useLoader();
     const alerts = useAlerts();
@@ -32,14 +32,14 @@ const TagsSelecter: React.FC = () => {
     const [notusedTags, setNotusedTags] = useState<ImgstorTag[]>([]);
     const [draggingTag, setDraggingTag] = useState<ImgstorTag>();
     const [draggingPosation, setDraggingPosation] = useState<DraggingPosation>();
-    const selecter = useRef<HTMLDivElement>(null);
+    const selector = useRef<HTMLDivElement>(null);
     const selected = useRef<HTMLDivElement>(null);
     const notused = useRef<HTMLDivElement>(null);
     const remove = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
 
-        const displayChangedHandler = (e: TagsSelecterEvent<"DisplayChanged">) => {
+        const displayChangedHandler = (e: TagsSelectorEvent<"DisplayChanged">) => {
 
             if (e.detail) {
                 const { target, origin } = e.detail;
@@ -84,10 +84,10 @@ const TagsSelecter: React.FC = () => {
             }
         }
 
-        imgstor.tagsSelecter.on("DisplayChanged", displayChangedHandler);
+        imgstor.tagsSelector.on("DisplayChanged", displayChangedHandler);
 
         return () => {
-            imgstor.tagsSelecter.off("DisplayChanged", displayChangedHandler);
+            imgstor.tagsSelector.off("DisplayChanged", displayChangedHandler);
         }
     }, []);
 
@@ -112,7 +112,7 @@ const TagsSelecter: React.FC = () => {
 
         const removeMessage = new Message({
             type: Message.Type.ALERT,
-            content: t("tags-selecter.alert.remove-tag", { name }),
+            content: t("tags-selector.alert.remove-tag", { name }),
             buttons: [
                 new MessageButton(t("main.cancel")),
                 confirm
@@ -144,7 +144,7 @@ const TagsSelecter: React.FC = () => {
 
     useEffect(() => {
 
-        const container = selecter.current;
+        const container = selector.current;
         const select = selected.current;
         if (!container || !select) return;
 
@@ -266,59 +266,59 @@ const TagsSelecter: React.FC = () => {
     }
 
     const handleCancel = () => {
-        imgstor.tagsSelecter.selected();
+        imgstor.tagsSelector.selected();
     }
 
     const handleConfirm = () => {
-        imgstor.tagsSelecter.selected(selectedTags);
+        imgstor.tagsSelector.selected(selectedTags);
     }
 
     if (target === undefined) {
         return <></>;
     }
 
-    return <div className={styles.tags_selecter_container}>
-        <div className={styles.tags_selecter} ref={selecter}>
-            <div className={styles.tags_selecter_selected_tags} ref={selected}>
+    return <div className={styles.tags_selector_container}>
+        <div className={styles.tags_selector} ref={selector}>
+            <div className={styles.tags_selector_selected_tags} ref={selected}>
                 {selectedTags.map(
                     (tag) => <TagItem className={componentStyles.tag} key={tag.tagId} tag={tag} ondrag={handleDragTag} onclick={HandleClickTag} />
                 )}
             </div>
 
-            <div className={styles.tags_selecter_tag_options}>
+            <div className={styles.tags_selector_tag_options}>
 
-                <form className={styles.tags_selecter_tag_option} onSubmit={handleCreateTag}>
+                <form className={styles.tags_selector_tag_option} onSubmit={handleCreateTag}>
 
-                    <span className={styles.tags_selecter_tag_option_label}>{t("tags-selecter.tag.create.label")}</span>
-                    <input type="textbox" className={styles.tags_selecter_add_tag_input} name="tag_name" />
-                    <button className={styles.tags_selecter_add_tag_button} type="submit">{t("main.confirm")}</button>
+                    <span className={styles.tags_selector_tag_option_label}>{t("tags-selector.tag.create.label")}</span>
+                    <input type="textbox" className={styles.tags_selector_add_tag_input} name="tag_name" />
+                    <button className={styles.tags_selector_add_tag_button} type="submit">{t("main.confirm")}</button>
 
                 </form>
 
-                <form className={styles.tags_selecter_tag_option}>
+                <form className={styles.tags_selector_tag_option}>
 
-                    <span className={styles.tags_selecter_tag_option_label}>{t("tags-selecter.tag.remove.label")}</span>
-                    <div className={styles.tags_selecter_remove_tag_block} data-label={t("tags-selecter.tag.remove.drag")}
+                    <span className={styles.tags_selector_tag_option_label}>{t("tags-selector.tag.remove.label")}</span>
+                    <div className={styles.tags_selector_remove_tag_block} data-label={t("tags-selector.tag.remove.drag")}
                         ref={remove}
                     ></div>
 
                 </form>
             </div>
 
-            <div className={styles.tags_selecter_not_used_tags} ref={notused}>
+            <div className={styles.tags_selector_not_used_tags} ref={notused}>
                 {notusedTags.map(
                     (tag) => <TagItem className={componentStyles.tag} key={tag.tagId} tag={tag} ondrag={handleDragTag} onclick={HandleClickTag} />
                 )}
             </div>
 
-            <div className={styles.tags_selecter_options}>
-                <button className={styles.tags_selecter_option} onClick={handleCancel}>{t("main.cancel")}</button>
-                <button className={styles.tags_selecter_option} onClick={handleConfirm}>{t("main.confirm")}</button>
+            <div className={styles.tags_selector_options}>
+                <button className={styles.tags_selector_option} onClick={handleCancel}>{t("main.cancel")}</button>
+                <button className={styles.tags_selector_option} onClick={handleConfirm}>{t("main.confirm")}</button>
             </div>
 
             {draggingTag && draggingPosation &&
                 <div
-                    className={styles.tags_selecter_dragging_tag}
+                    className={styles.tags_selector_dragging_tag}
                     style={{ top: draggingPosation.y, left: draggingPosation.x }}
                 >{draggingTag.name}</div>
             }
@@ -327,4 +327,4 @@ const TagsSelecter: React.FC = () => {
     </div >;
 }
 
-export default TagsSelecter;
+export default TagsSelector;

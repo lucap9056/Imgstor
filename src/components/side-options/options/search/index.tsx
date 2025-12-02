@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { SearchContent, useImgstor } from "services/imgstor";
 import ImgstorDB, { ImgstorTag, ImgstorImage } from "services/imgstor-db";
-import { TagsSelecterEvent } from "services/tags-selecter";
+import { TagsSelectorEvent } from "services/tags-selector";
 import { faMagnifyingGlass, faTags, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
@@ -37,7 +37,7 @@ const Search: React.FC<Props> = ({ onchange, hide }) => {
 
     useEffect(() => {
 
-        const TagsSelectedHandler = (e: TagsSelecterEvent<"TagsSelected">) => {
+        const TagsSelectedHandler = (e: TagsSelectorEvent<"TagsSelected">) => {
             const { target, selected } = e.deteil;
 
             if (target === componentId) {
@@ -47,15 +47,15 @@ const Search: React.FC<Props> = ({ onchange, hide }) => {
             }
         }
 
-        imgstor.tagsSelecter.on("TagsSelected", TagsSelectedHandler);
+        imgstor.tagsSelector.on("TagsSelected", TagsSelectedHandler);
 
         return () => {
-            imgstor.tagsSelecter.off("TagsSelected", TagsSelectedHandler);
+            imgstor.tagsSelector.off("TagsSelected", TagsSelectedHandler);
         }
     }, []);
 
     const handleSelectTags = () => {
-        imgstor.tagsSelecter.request(componentId, selectedTags);
+        imgstor.tagsSelector.request(componentId, selectedTags);
     }
 
     const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {

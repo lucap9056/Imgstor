@@ -7,7 +7,7 @@ import { useImgstor } from "services/imgstor";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTags } from "@fortawesome/free-solid-svg-icons";
 
-import { TagsSelecterEvent } from "services/tags-selecter";
+import { TagsSelectorEvent } from "services/tags-selector";
 import { useNotifications } from "global-components/notifications";
 import { useLoader } from "global-components/loader";
 import { Message } from "structs/message";
@@ -29,7 +29,7 @@ const Tags: React.FC<Props> = ({ image }) => {
 
     useEffect(() => {
 
-        const TagsSelectedHandler = async (e: TagsSelecterEvent<"TagsSelected">) => {
+        const TagsSelectedHandler = async (e: TagsSelectorEvent<"TagsSelected">) => {
             if (e.deteil.target !== componentId) return;
             setTags(e.deteil.selected);
 
@@ -74,14 +74,14 @@ const Tags: React.FC<Props> = ({ image }) => {
             loading.remove();
         }
 
-        imgstor.tagsSelecter.on("TagsSelected", TagsSelectedHandler);
+        imgstor.tagsSelector.on("TagsSelected", TagsSelectedHandler);
         return () => {
-            imgstor.tagsSelecter.off("TagsSelected", TagsSelectedHandler);
+            imgstor.tagsSelector.off("TagsSelected", TagsSelectedHandler);
         }
     }, []);
 
     const handleSelectTags = () => {
-        imgstor.tagsSelecter.request(componentId, tags);
+        imgstor.tagsSelector.request(componentId, tags);
     }
 
     return <div className={styles.image_tags} onClick={handleSelectTags}>
