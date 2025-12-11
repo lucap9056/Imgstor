@@ -41,15 +41,14 @@
             .image_preview {
                 width: 100%;
                 object-fit: cover;
-                border-radius: 5px;
                 object-position: 50% 50%;
             }
 
             .image_title {
-                color: #f2edff;
+                background: $light-secondary-color;
+                color: $light-text-color;
                 font-size: 0.875rem;
                 padding: 0.3125rem;
-                border-radius: 4px;
                 text-wrap: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
