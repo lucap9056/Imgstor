@@ -16,7 +16,7 @@ export default class Catbox {
     public readonly isEnabled: boolean;
     public readonly proxy: string;
     private readonly userhash: string;
-    private readonly separatePreviewUpload: boolean;
+    //private readonly separatePreviewUpload: boolean;
     public readonly features: ServiceFeatures = {
         save: true,
         file: true,
@@ -24,16 +24,16 @@ export default class Catbox {
         description: true
     };
 
-    constructor(id: string, isEnabled: boolean, proxy: string, userhash: string, separatePreviewUpload: boolean) {
+    constructor(id: string, isEnabled: boolean, proxy: string, userhash: string, _: boolean) {
         this.hostingServiceId = id;
         this.isEnabled = isEnabled;
         this.proxy = proxy;
         this.userhash = userhash;
-        this.separatePreviewUpload = separatePreviewUpload;
+        //this.separatePreviewUpload = separatePreviewUpload;
     }
 
     public async Upload(shouldSave: boolean, imageFile: ImageFile): Promise<ImgstorImage> {
-        const { hostingServiceId, proxy, userhash, separatePreviewUpload } = this;
+        const { hostingServiceId, proxy, userhash } = this;
 
 
         const fileToUpload = imageFile.processed?.file || imageFile.original.file;
@@ -45,20 +45,20 @@ export default class Catbox {
         if (!shouldSave) {
             return await this.NoSaveUpload(fileToUpload, imageFile);
         }
-
-        if (separatePreviewUpload) {
-
-            if (!imageFile.preview) {
-                throw new Error("Preview image file is required when separate preview upload is enabled.");
-            }
-            const previewFile = imageFile.preview.file;
-
-            if (previewFile.size > Catbox.UPLOAD_SIZE_LIMIT_BYTES) {
-                throw new Error(`Preview image file size exceeds the limit of ${Catbox.UPLOAD_SIZE_LIMIT_BYTES / Math.pow(1024, 2)}MB.`);
-            }
-
-        }
-
+        /*
+                if (separatePreviewUpload) {
+        
+                    if (!imageFile.preview) {
+                        throw new Error("Preview image file is required when separate preview upload is enabled.");
+                    }
+                    const previewFile = imageFile.preview.file;
+        
+                    if (previewFile.size > Catbox.UPLOAD_SIZE_LIMIT_BYTES) {
+                        throw new Error(`Preview image file size exceeds the limit of ${Catbox.UPLOAD_SIZE_LIMIT_BYTES / Math.pow(1024, 2)}MB.`);
+                    }
+        
+                }
+        */
         const mainRequest = (() => {
 
             const formData = new FormData();
@@ -67,29 +67,33 @@ export default class Catbox {
             formData.append("fileToUpload", fileToUpload);
             return fetch(proxy, { method: "POST", body: formData });
         })();
-
-        const previewRequest = (() => {
-            if (separatePreviewUpload && imageFile.preview) {
-                return Catbox.ConvertPngToWebpThumbnail(imageFile.preview.file).then((thumbnail) => {
-                    const formData = new FormData();
-                    formData.append("userhash", userhash);
-                    formData.append("reqtype", "fileupload");
-                    formData.append("fileToUpload", thumbnail);
-                    return fetch(proxy, { method: "POST", body: formData });
-                });
-            }
-        })();
-
+        /*
+                const previewRequest = (() => {
+                    if (separatePreviewUpload && imageFile.preview) {
+                        return Catbox.ConvertPngToWebpThumbnail(imageFile.preview.file).then((thumbnail) => {
+                            const formData = new FormData();
+                            formData.append("userhash", userhash);
+                            formData.append("reqtype", "fileupload");
+                            formData.append("fileToUpload", thumbnail);
+                            return fetch(proxy, { method: "POST", body: formData });
+                        });
+                    }
+                })();
+        */
         try {
 
             const imageUrl = await mainRequest.then(async (response) => {
                 if (response.ok) return response.text();
                 throw await response.text().then((message) => new Error(message));
             });
+
+            const previewUrl = imageUrl.trim().replace(/\/([^\/]+\/?)$/, `/thumbs/t_$1`);
+            /*
             const previewUrl = previewRequest ? await previewRequest.then(async (response) => {
                 if (response.ok) return response.text();
                 throw await response.text().then((message) => new Error(message));
             }) : undefined;
+             */
 
             return {
                 imageId: "",
@@ -195,7 +199,7 @@ export default class Catbox {
     public async Preview(image: ImgstorImage): Promise<string> {
         return image.previewUrl;
     }
-
+/*
     private static async ConvertPngToWebpThumbnail(pngFile: File): Promise<File> {
         const MAX_DIMENSION = 640;
         const WEBP_MIME_TYPE = "image/webp";
@@ -252,4 +256,5 @@ export default class Catbox {
             img.src = URL.createObjectURL(pngFile);
         });
     }
+    */
 }

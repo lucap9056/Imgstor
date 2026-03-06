@@ -175,10 +175,6 @@ const SettingHostingServices: React.FC = () => {
                     password={true}
                     value={catbox.userhash}
                 />
-                <Toggle label={t("settings.hosting-service.separate-preview")}
-                    name={NAMES.CATBOX_SEPARATE_PREVIEW}
-                    value={catbox.separatePreviewUpload}
-                ></Toggle>
 
             </Block>
             <Block title={t("settings.hosting-service.title.sm-ms")}>
