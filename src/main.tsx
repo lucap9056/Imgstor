@@ -1,4 +1,5 @@
 import { ConfirmDialogProvider } from "global-components/confirm-dialog";
+import ErrorBoundary from "global-components/error-boundary";
 import { LoaderProvider } from "global-components/loader";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
@@ -13,9 +14,11 @@ if (!rootElement) {
 const root = createRoot(rootElement);
 
 root.render(
-  <LoaderProvider>
-    <ConfirmDialogProvider>
-      <App />
-    </ConfirmDialogProvider>
-  </LoaderProvider>,
+  <ErrorBoundary>
+    <LoaderProvider>
+      <ConfirmDialogProvider>
+        <App />
+      </ConfirmDialogProvider>
+    </LoaderProvider>
+  </ErrorBoundary>,
 );
