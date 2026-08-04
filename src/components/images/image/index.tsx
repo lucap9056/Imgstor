@@ -1,7 +1,6 @@
 import { faCopy } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import styles from "components/images/style.module.scss";
-import { useNotifications } from "global-components/notifications";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -10,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 import RoutePaths from "route-paths";
 import { useImgstor } from "services/imgstor";
 import ImgstorDB, { type ImgstorImage } from "services/imgstor-db";
-import { Message } from "structs/message";
+import { toast } from "sonner";
 
 interface Props {
   image: ImgstorImage;
@@ -18,7 +17,6 @@ interface Props {
 }
 
 const ImageComponenet: React.FC<Props> = ({ image, onload }) => {
-  const imgstorNotifications = useNotifications();
   const { t } = useTranslation();
   const imgstor = useImgstor();
   const navigate = useNavigate();
@@ -67,11 +65,7 @@ const ImageComponenet: React.FC<Props> = ({ image, onload }) => {
 
   const HandleCopyLink = () => {
     if (!image) return;
-    const copiedMessage = new Message({
-      type: Message.Type.NORMAL,
-      content: t("viewer.notification.link-copied"),
-    });
-    imgstorNotifications.append(copiedMessage);
+    toast.success(t("viewer.notification.link-copied"));
     navigator.clipboard.writeText(image.imageUrl);
   };
 
