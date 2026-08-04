@@ -6,6 +6,7 @@ import {
   faRightFromBracket,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useLoader } from "global-components/loader";
 import cookies from "js-cookie";
 import type React from "react";
 import { useEffect, useState } from "react";
@@ -25,6 +26,7 @@ import styles from "./style.module.scss";
 const SideOptions: React.FC = () => {
   const navigate = useNavigate();
   const imgstor = useImgstor();
+  const loader = useLoader();
   const [sidePage, setSidePage] = useState<React.ReactNode>();
   const [sidePageName, setSidePageName] = useState<string>();
   const [searchContent, setSearchContent] = useState<SearchContent>();
@@ -83,8 +85,10 @@ const SideOptions: React.FC = () => {
     }
   };
 
-  const handleLogout = () => {
-    imgstor.logout();
+  const handleLogout = async () => {
+    const loading = loader.append();
+    await imgstor.logout();
+    loading.remove();
     location.reload();
   };
 

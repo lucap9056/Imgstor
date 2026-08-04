@@ -240,8 +240,8 @@ export default class Imgstor extends EventDispatcher<ImgstorEventDefinitions> {
     return Object.values(imageHostingServices).filter((l) => l.isEnabled);
   }
 
-  public logout(): void {
-    this.google.signOut();
+  public async logout(): Promise<void> {
+    await this.google.signOut();
   }
 }
 

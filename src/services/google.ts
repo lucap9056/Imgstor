@@ -9,6 +9,7 @@ export type GoogleEvent<T extends keyof GoogleEventDefinitions> = CustomEvent<
 >;
 
 const SCOPE = "https://www.googleapis.com/auth/drive.appdata";
+const SIGN_OUT_TIMEOUT_MS = 5000;
 const REFRESH_MARGIN_SECONDS = 60;
 
 const CLIENT_ID = process.env.VITE_GOOGLE_CLIENT_ID;
@@ -100,7 +101,7 @@ export default class Google extends EventDispatcher<GoogleEventDefinitions> {
     return this.accessToken !== "";
   }
 
-  public signOut(): void {
+  public signOut(): Promise<void> {
     const { accessToken } = this;
 
     if (this.refreshTimeoutId) {
@@ -111,11 +112,20 @@ export default class Google extends EventDispatcher<GoogleEventDefinitions> {
 
     if (!accessToken) {
       this.emit("StatusChanged", { signedIn: false });
-      return;
+      return Promise.resolve();
     }
 
-    google.accounts.oauth2.revoke(accessToken, () => {
-      this.emit("StatusChanged", { signedIn: false });
+    return new Promise((resolve) => {
+      const timeoutId = setTimeout(() => {
+        this.emit("StatusChanged", { signedIn: false });
+        resolve();
+      }, SIGN_OUT_TIMEOUT_MS);
+
+      google.accounts.oauth2.revoke(accessToken, () => {
+        clearTimeout(timeoutId);
+        this.emit("StatusChanged", { signedIn: false });
+        resolve();
+      });
     });
   }
 }
