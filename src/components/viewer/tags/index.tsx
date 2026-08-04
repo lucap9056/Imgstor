@@ -48,7 +48,7 @@ const Tags: React.FC<Props> = ({ image }) => {
         (tag) => !updatedTags.has(tag.tagId),
       );
 
-      if (appendedTags.length == 0 && removedTags.length == 0) return;
+      if (appendedTags.length === 0 && removedTags.length === 0) return;
 
       const loading = loader.append();
       const saving = notifications.append(
@@ -85,7 +85,7 @@ const Tags: React.FC<Props> = ({ image }) => {
     return () => {
       imgstor.tagsSelector.off("TagsSelected", TagsSelectedHandler);
     };
-  }, []);
+  }, [componentId, imgstor, image.imageId, loader, notifications, t]);
 
   const handleSelectTags = () => {
     imgstor.tagsSelector.request(componentId, tags);
