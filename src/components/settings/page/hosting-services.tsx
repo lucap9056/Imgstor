@@ -3,15 +3,13 @@ import Label from "components/settings/blocks/label";
 import Textbox from "components/settings/blocks/textbox";
 import Toggle from "components/settings/blocks/toggle";
 import { useLoader } from "global-components/loader";
-import { useNotifications } from "global-components/notifications";
 import type React from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import RoutePaths from "route-paths";
-
 import { useImgstor } from "services/imgstor";
 import Settings, { type HostingServicesConfig } from "services/settings";
-import { Message } from "structs/message";
+import { toast } from "sonner";
 
 import styles from "./style.module.scss";
 
@@ -47,7 +45,6 @@ class Form {
 }
 
 const SettingHostingServices: React.FC = () => {
-  const notifications = useNotifications();
   const loader = useLoader();
   const { t } = useTranslation();
   const imgstor = useImgstor();
@@ -64,12 +61,8 @@ const SettingHostingServices: React.FC = () => {
     const form = new Form(e.target);
 
     const saving = loader.append();
-    const savingMessage = new Message({
-      type: Message.Type.ALERT,
-      content: "saving...",
-    });
+    const savingToastId = toast.loading(t("main.saving"));
 
-    notifications.append(savingMessage);
     try {
       const updatedHostingServicesConfig: HostingServicesConfig = {
         version: Settings.HOSTING_SERVICE_VERSION,
@@ -104,15 +97,10 @@ const SettingHostingServices: React.FC = () => {
         hostingServices: updatedHostingServicesConfig,
       });
     } catch (err) {
-      notifications.append(
-        new Message({
-          type: Message.Type.ERROR,
-          content: (err as Error).message,
-        }),
-      );
+      toast.error((err as Error).message);
     } finally {
       saving.remove();
-      savingMessage.remove();
+      toast.dismiss(savingToastId);
     }
   };
 

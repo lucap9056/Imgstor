@@ -1,22 +1,20 @@
 import Block from "components/settings/blocks";
 import HostingService from "components/settings/page/storage/hosting-service-version";
 import styles from "components/settings/page/style.module.scss";
-import { useAlerts } from "global-components/alerts";
+import { useConfirm } from "global-components/confirm-dialog";
 import { useLoader } from "global-components/loader";
-import { useNotifications } from "global-components/notifications";
 import type React from "react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import RoutePaths from "route-paths";
 import { useImgstor } from "services/imgstor";
-import { Message, MessageButton } from "structs/message";
+import { toast } from "sonner";
 
 const SettingStorage: React.FC = () => {
   const { t } = useTranslation();
-  const alerts = useAlerts();
+  const confirm = useConfirm();
   const loader = useLoader();
-  const notifications = useNotifications();
   const imgstor = useImgstor();
   const [usedStorage, setUsedStorage] = useState<number>(0);
   const [loaded, setLoaded] = useState(false);
@@ -25,26 +23,16 @@ const SettingStorage: React.FC = () => {
   const handleLoad = async () => {
     const loading = loader.append();
 
-    const loadingNotification = notifications.append(
-      new Message({
-        type: Message.Type.ALERT,
-        content: t("settings.notification.load"),
-      }),
-    );
+    const loadingToastId = toast.loading(t("settings.notification.load"));
 
     try {
       const usage = await imgstor.using;
       setUsedStorage(usage);
       setLoaded(true);
     } catch (err) {
-      notifications.append(
-        new Message({
-          type: Message.Type.ERROR,
-          content: (err as Error).message,
-        }),
-      );
+      toast.error((err as Error).message);
     } finally {
-      loadingNotification.remove();
+      toast.dismiss(loadingToastId);
       loading.remove();
     }
   };
@@ -98,48 +86,35 @@ const SettingStorage: React.FC = () => {
   };
 
   const handleClear = () => {
-    const confirm = new MessageButton(t("main.confirm"));
+    confirm({
+      description: t("settings.storage.alert.clear"),
+      buttons: [
+        { label: t("main.cancel") },
+        {
+          label: t("main.confirm"),
+          variant: "danger",
+          onClick: async () => {
+            const loading = loader.append();
+            const clearingToastId = toast.loading(
+              t("settings.storage.notification.clearing"),
+            );
 
-    confirm.on("Clicked", async () => {
-      const loading = loader.append();
-      const clearing = notifications.append(
-        new Message({
-          type: Message.Type.ALERT,
-          content: t("settings.storage.notification.clearing"),
-        }),
-      );
+            try {
+              await imgstor.clear();
+              toast.success(t("settings.sotorage.notification.cleared"));
 
-      try {
-        await imgstor.clear();
-        notifications.append(
-          new Message({
-            type: Message.Type.NORMAL,
-            content: t("settings.sotorage.notification.cleared"),
-          }),
-        );
-
-        location.hash = "";
-        location.reload();
-      } catch (err) {
-        notifications.append(
-          new Message({
-            type: Message.Type.ERROR,
-            content: (err as Error).message,
-          }),
-        );
-      } finally {
-        loading.remove();
-        clearing.remove();
-      }
+              location.hash = "";
+              location.reload();
+            } catch (err) {
+              toast.error((err as Error).message);
+            } finally {
+              loading.remove();
+              toast.dismiss(clearingToastId);
+            }
+          },
+        },
+      ],
     });
-
-    alerts.append(
-      new Message({
-        type: Message.Type.ALERT,
-        content: t("settings.storage.alert.clear"),
-        buttons: [new MessageButton(t("main.cancel")), confirm],
-      }),
-    );
   };
 
   const handleBack = () => {
