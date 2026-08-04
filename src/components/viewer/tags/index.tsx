@@ -1,14 +1,13 @@
 import { faTags } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useLoader } from "global-components/loader";
-import { useNotifications } from "global-components/notifications";
 import type React from "react";
 import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useImgstor } from "services/imgstor";
 import type { ImgstorImage } from "services/imgstor-db";
 import type { TagsSelectorEvent } from "services/tags-selector";
-import { Message } from "structs/message";
+import { toast } from "sonner";
 
 import componentStyles from "styles/components.module.scss";
 import styles from "./style.module.scss";
@@ -19,7 +18,6 @@ interface Props {
 
 const Tags: React.FC<Props> = ({ image }) => {
   const componentId = useId();
-  const notifications = useNotifications();
   const imgstor = useImgstor();
   const loader = useLoader();
   const { t } = useTranslation();
@@ -51,12 +49,7 @@ const Tags: React.FC<Props> = ({ image }) => {
       if (appendedTags.length === 0 && removedTags.length === 0) return;
 
       const loading = loader.append();
-      const saving = notifications.append(
-        new Message({
-          type: Message.Type.ALERT,
-          content: t("main.saving"),
-        }),
-      );
+      const savingToastId = toast.loading(t("main.saving"));
 
       try {
         for (const tag of removedTags) {
@@ -69,15 +62,10 @@ const Tags: React.FC<Props> = ({ image }) => {
 
         await imgstor.db.Save();
       } catch (err) {
-        notifications.append(
-          new Message({
-            type: Message.Type.ERROR,
-            content: (err as Error).message,
-          }),
-        );
+        toast.error((err as Error).message);
       }
 
-      saving.remove();
+      toast.dismiss(savingToastId);
       loading.remove();
     };
 
@@ -85,7 +73,7 @@ const Tags: React.FC<Props> = ({ image }) => {
     return () => {
       imgstor.tagsSelector.off("TagsSelected", TagsSelectedHandler);
     };
-  }, [componentId, imgstor, image.imageId, loader, notifications, t]);
+  }, [componentId, imgstor, image.imageId, loader, t]);
 
   const handleSelectTags = () => {
     imgstor.tagsSelector.request(componentId, tags);
