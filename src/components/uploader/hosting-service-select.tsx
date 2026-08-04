@@ -21,7 +21,7 @@ const HostingServicesSelect: React.FC<Props> = ({ imgstor, onchange }) => {
     if (selectedHostingService) {
       onchange(selectedHostingService);
     }
-  }, [selectedHostingService]);
+  }, [selectedHostingService, onchange]);
 
   useEffect(() => {
     const hostingServices = imgstor.enabledHostingServices;
@@ -30,7 +30,7 @@ const HostingServicesSelect: React.FC<Props> = ({ imgstor, onchange }) => {
       SetHostingServices(hostingServices);
       SetSelectedHostingService(hostingServices[0]);
     }
-  }, []);
+  }, [imgstor]);
 
   const HandleSeletedImageHostingService = (id: string) => {
     const hostingService = hostingServices.find(
@@ -42,7 +42,7 @@ const HostingServicesSelect: React.FC<Props> = ({ imgstor, onchange }) => {
   };
 
   if (!selectedHostingService) {
-    return <></>;
+    return null;
   }
 
   return (

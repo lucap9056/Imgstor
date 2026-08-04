@@ -15,8 +15,7 @@ export class Transcode {
   }
 
   public remove(): void {
-    const { id, transcodeLogs } = this;
-    transcodeLogs.remove(id);
+    this.transcodeLogs.remove(this.id);
   }
 
   public done(): void {
@@ -46,6 +45,7 @@ export default class TranscodeLogs extends EventDispatcher<TranscodeLogsEventDef
     const [followScroll, setFollowScroll] = useState(true);
     const logAreaRef = useRef<HTMLTextAreaElement>(null);
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: transcodeLogs is a new instance created on every parent render (not memoized); tracking it here would reset accumulated log state on unrelated parent re-renders
     useEffect(() => {
       const logAppendedHandler = (e: TranscodeLogsEvent<"LogAppended">) => {
         SetLogs((logs) => logs + e.detail);
@@ -70,6 +70,7 @@ export default class TranscodeLogs extends EventDispatcher<TranscodeLogsEventDef
       };
     }, []);
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: logs is the intentional trigger to re-measure/scroll after new log content is appended, even though it isn't read directly in the body
     useEffect(() => {
       if (logAreaRef.current === null || !followScroll) {
         return;
@@ -78,10 +79,10 @@ export default class TranscodeLogs extends EventDispatcher<TranscodeLogsEventDef
       const newScrollTopMax =
         logAreaRef.current.scrollHeight - logAreaRef.current.clientHeight;
       logAreaRef.current.scrollTop = newScrollTopMax;
-    }, [logs]);
+    }, [logs, followScroll]);
 
     if (!isVisible) {
-      return <></>;
+      return null;
     }
 
     const logAreaScroll = (e: React.UIEvent) => {

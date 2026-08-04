@@ -17,7 +17,7 @@ const SelectFormat: React.FC<Props> = ({ formats, update }) => {
   useEffect(() => {
     SetVisible(false);
     update(format);
-  }, [format]);
+  }, [format, update]);
 
   const Visible = () => {
     SetVisible(true);

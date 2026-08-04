@@ -53,6 +53,7 @@ const FileSelect: React.FC<Props> = ({
   const [selectedFile, SetSelectedFile] = useState<ConvertedFile>();
   const [previewImageUrl, SetPreviewImageUrl] = useState<string>();
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: must run only when selectedFile changes; adding previewImageUrl (which this effect itself sets) would revoke/recreate the object URL in an infinite loop, and onchange re-fires on unrelated parent re-renders
   useEffect(() => {
     if (previewImageUrl) {
       URL.revokeObjectURL(previewImageUrl);

@@ -68,7 +68,7 @@ const Uploader: React.FC = () => {
     notifications.append(saving);
     try {
       await imgstor.db.Save();
-    } catch (err) {
+    } catch {
       notifications.append(
         new Message({
           type: Message.Type.ERROR,
@@ -109,7 +109,7 @@ const Uploader: React.FC = () => {
 
       try {
         await imgstor.db.Save();
-      } catch (err) {
+      } catch {
         notifications.append(
           new Message({
             type: Message.Type.ERROR,
