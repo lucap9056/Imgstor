@@ -2,7 +2,6 @@ import Loader, { useLoader } from "global-components/loader";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HashRouter, Route, Routes } from "react-router-dom";
-import { buildResult, match } from "resultant.js/rustify";
 import { Toaster, toast } from "sonner";
 import "./i18n";
 
@@ -25,20 +24,13 @@ function App() {
   const HandleSignIn = async () => {
     const loading = loader.append();
 
-    const result = await buildResult(async () => {
+    try {
       const google = await Google.signIn();
-      return Imgstor.New(google);
-    });
-
-    match(result, {
-      Ok(value) {
-        SetImgstor(value);
-      },
-      Err(err) {
-        toast.error(t("google.signin.fail"));
-        console.error(err);
-      },
-    });
+      SetImgstor(await Imgstor.New(google));
+    } catch (err) {
+      toast.error(t("google.signin.fail"));
+      console.error(err);
+    }
 
     loading.remove();
   };

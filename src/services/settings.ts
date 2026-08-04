@@ -1,5 +1,4 @@
 import { merge } from "lodash";
-import { buildResult } from "resultant.js/rustify";
 import type { Drive } from "services/google";
 import EventDispatcher from "structs/event-dispatcher";
 
@@ -146,11 +145,8 @@ export default class Settings extends EventDispatcher<SettingsEventDefinitions> 
 
     const version = Date.now();
 
-    const updatedConfig = await buildResult(async () => {
-      if (imgstorConfig.fileId !== "") {
-        const { fileId } = imgstorConfig;
-        return { ...config, fileId, version };
-      }
+    let fileId = imgstorConfig.fileId;
+    if (fileId === "") {
       const res = await googleDrive.createFile(
         ConfigFile.name,
         ConfigFile.type,
@@ -158,10 +154,10 @@ export default class Settings extends EventDispatcher<SettingsEventDefinitions> 
       if (!res.id) {
         throw new Error();
       }
+      fileId = res.id;
+    }
 
-      const fileId = res.id;
-      return { ...config, fileId, version };
-    }).then((r) => r.unwrap());
+    const updatedConfig = { ...config, fileId, version };
 
     const updatedConfigString = JSON.stringify(updatedConfig);
 
