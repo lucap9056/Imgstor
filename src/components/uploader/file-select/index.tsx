@@ -2,8 +2,6 @@ import ConvertFile from "components/uploader/file-select/convert";
 import type { ConvertedFile } from "components/uploader/file-select/convert/ctx";
 import styles from "components/uploader/style.module.scss";
 import type TranscodeLogs from "components/uploader/transcode-logs";
-import { useAlerts } from "global-components/alerts";
-import { useNotifications } from "global-components/notifications";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -12,7 +10,7 @@ import type {
   ImageFile,
   ImageHostingService,
 } from "services/image-hosting-services";
-import { Message, MessageButton } from "structs/message";
+import { toast } from "sonner";
 
 function FilesSelecter(): Promise<File> {
   return new Promise((resolve, reject) => {
@@ -45,8 +43,6 @@ const FileSelect: React.FC<Props> = ({
   transcodeLogs,
   onchange,
 }) => {
-  const notifications = useNotifications();
-  const alerts = useAlerts();
   const translation = useTranslation();
   const { t } = translation;
   const [dragActive, SetDragActive] = useState(false);
@@ -81,17 +77,15 @@ const FileSelect: React.FC<Props> = ({
   };
 
   const SelectFile = (file: File) => {
-    const messages = new Map();
+    const pendingToastIds = new Set<string | number>();
 
     ConvertFile({
       translation,
-      notifications,
-      alerts,
       fileConverter,
       hostingService,
       transcodeLogs,
       file,
-      messages,
+      pendingToastIds,
     })
       .then(SetSelectedFile)
       .catch((err: Error) => {
@@ -99,24 +93,20 @@ const FileSelect: React.FC<Props> = ({
           `An error occurred during file selection and processing: ${err.message}`,
         );
 
-        for (const message of messages.values()) {
-          message.Remove();
-          messages.delete(message.id);
+        for (const id of pendingToastIds) {
+          toast.dismiss(id);
         }
+        pendingToastIds.clear();
 
-        const confirmButton = new MessageButton(t("main.confirm"));
-        confirmButton.on("Clicked", () => {
-          transcodeLogs.clear();
-        });
-
-        notifications.append(
-          new Message({
-            type: Message.Type.ALERT,
-            content: t("uploader.file.error.processing", {
-              message: err.message,
-            }),
-            buttons: [confirmButton],
-          }),
+        toast.error(
+          t("uploader.file.error.processing", { message: err.message }),
+          {
+            action: {
+              label: t("main.confirm"),
+              onClick: () => transcodeLogs.clear(),
+            },
+            duration: Number.POSITIVE_INFINITY,
+          },
         );
       });
   };

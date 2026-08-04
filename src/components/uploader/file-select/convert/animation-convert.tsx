@@ -1,16 +1,19 @@
+import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import type { FileConvertContext } from "components/uploader/file-select/convert/ctx";
 import { useEffect, useState } from "react";
+import { createRoot } from "react-dom/client";
+import { useTranslation } from "react-i18next";
 import { FORMATS, type FormatNames } from "services/converter/file-formats";
-import { Message, MessageButton } from "structs/message";
+import { toast } from "sonner";
 
 import styles from "./style.module.scss";
 
-interface Props {
+interface SelectFormatProps {
   formats: FormatNames[];
   update: (format: FormatNames) => void;
 }
 
-const SelectFormat: React.FC<Props> = ({ formats, update }) => {
+const SelectFormat: React.FC<SelectFormatProps> = ({ formats, update }) => {
   const [format, SetFormat] = useState(formats[0]);
   const [visible, SetVisible] = useState(false);
 
@@ -45,8 +48,87 @@ const SelectFormat: React.FC<Props> = ({ formats, update }) => {
   );
 };
 
+interface ConvertConfirmDialogProps {
+  formats: FormatNames[];
+  onCancel: () => void;
+  onConfirm: (format: FormatNames) => void;
+}
+
+const ConvertConfirmDialog: React.FC<ConvertConfirmDialogProps> = ({
+  formats,
+  onCancel,
+  onConfirm,
+}) => {
+  const { t } = useTranslation();
+  const [format, setFormat] = useState<FormatNames>(formats[0]);
+
+  return (
+    <AlertDialog.Root
+      open
+      onOpenChange={(open) => {
+        if (!open) onCancel();
+      }}
+    >
+      <AlertDialog.Portal>
+        <AlertDialog.Overlay className={styles.dialog_overlay} />
+        <AlertDialog.Content className={styles.dialog_content}>
+          <AlertDialog.Description className={styles.message}>
+            {t("uploader.file.alert.converter.animation")}
+            <br />
+            {t("uploader.file.alert.converter.animation.ex")}
+            <br />
+            {t("uploader.file.alert.converter.animation.target")}{" "}
+            <SelectFormat formats={formats} update={setFormat} />
+          </AlertDialog.Description>
+          <div className={styles.dialog_buttons}>
+            <button
+              type="button"
+              className={styles.dialog_button}
+              onClick={onCancel}
+            >
+              {t("main.cancel")}
+            </button>
+            <button
+              type="button"
+              className={styles.dialog_button}
+              data-variant="primary"
+              onClick={() => onConfirm(format)}
+            >
+              {t("main.confirm")}
+            </button>
+          </div>
+        </AlertDialog.Content>
+      </AlertDialog.Portal>
+    </AlertDialog.Root>
+  );
+};
+
+function ShowFormatConfirmDialog(
+  formats: FormatNames[],
+): Promise<FormatNames | undefined> {
+  return new Promise((resolve) => {
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    const close = (format: FormatNames | undefined) => {
+      root.unmount();
+      container.remove();
+      resolve(format);
+    };
+
+    root.render(
+      <ConvertConfirmDialog
+        formats={formats}
+        onCancel={() => close(undefined)}
+        onConfirm={(format) => close(format)}
+      />,
+    );
+  });
+}
+
 export default async function (ctx: FileConvertContext): Promise<void> {
-  const { alerts, hostingService, translation, sourceFormat } = ctx;
+  const { hostingService, translation, sourceFormat } = ctx;
 
   const { t } = translation;
 
@@ -57,48 +139,15 @@ export default async function (ctx: FileConvertContext): Promise<void> {
   if (hostingServiceSupported) {
     await OnlyConvertPreviewImage(ctx);
   } else {
-    return new Promise((resolve, reject) => {
-      let targetFormat: FormatNames =
-        hostingService.SupportedAnimationFormats[0];
-      const Update = (format: FormatNames) => (targetFormat = format);
+    const targetFormat = await ShowFormatConfirmDialog(
+      hostingService.SupportedAnimationFormats,
+    );
 
-      const cancel = new MessageButton(t("main.cancel"));
-      cancel.once("Clicked", () => {
-        reject(new Error(t("uploader.notification.converter.cancel")));
-      });
+    if (targetFormat === undefined) {
+      throw new Error(t("uploader.notification.converter.cancel"));
+    }
 
-      const confirm = new MessageButton(t("main.confirm"));
-      confirm.once("Clicked", async () => {
-        try {
-          await ConfirmConvert(ctx, targetFormat);
-          resolve();
-        } catch (err) {
-          reject(err);
-        }
-      });
-
-      alerts.append(
-        new Message({
-          type: "ALERT",
-          content: (
-            <div className={styles.message}>
-              {t("uploader.file.alert.converter.animation")}
-              <br />
-              {t("uploader.file.alert.converter.animation.ex")}
-              <br />
-              {t("uploader.file.alert.converter.animation.target")}{" "}
-              {
-                <SelectFormat
-                  formats={hostingService.SupportedAnimationFormats}
-                  update={Update}
-                />
-              }
-            </div>
-          ),
-          buttons: [cancel, confirm],
-        }),
-      );
-    });
+    await ConfirmConvert(ctx, targetFormat);
   }
 }
 
@@ -108,9 +157,8 @@ async function ConfirmConvert(
 ) {
   const {
     transcodeLogs,
-    notifications,
     translation,
-    messages,
+    pendingToastIds,
     fileConverter,
     file,
     imageFile,
@@ -124,15 +172,14 @@ async function ConfirmConvert(
   const transcode = transcodeLogs.add();
   const LogMessage = (msg: string) => transcodeLogs.println(msg);
 
-  const abort = new MessageButton(t("main.abort"));
-  abort.on("Clicked", () => transcode.abortController.abort());
-  const message = new Message({
-    type: Message.Type.NORMAL,
-    content: t("uploader.file.notifiaction.transcoding"),
-    buttons: [abort],
+  const transcodeToastId = toast(t("uploader.file.notifiaction.transcoding"), {
+    action: {
+      label: t("main.abort"),
+      onClick: () => transcode.abortController.abort(),
+    },
+    duration: Number.POSITIVE_INFINITY,
   });
-  notifications.append(message);
-  messages.set(message.id, message);
+  pendingToastIds.add(transcodeToastId);
 
   const preprocessed = await fileConverter.PreprocessAnimation(
     transcode.abortController,
@@ -171,9 +218,9 @@ async function ConfirmConvert(
   }
 
   transcode.done();
-  message.remove();
+  toast.dismiss(transcodeToastId);
+  pendingToastIds.delete(transcodeToastId);
 
-  messages.delete(message.id);
   if (converted.file.size === 0) {
     throw new Error("fail");
   }
@@ -185,8 +232,7 @@ async function OnlyConvertPreviewImage(ctx: FileConvertContext) {
     file,
     imageFile,
     sourceFormat,
-    messages,
-    notifications,
+    pendingToastIds,
     fileConverter,
     transcodeLogs,
     translation,
@@ -199,15 +245,14 @@ async function OnlyConvertPreviewImage(ctx: FileConvertContext) {
   const transcode = transcodeLogs.add();
   const LogMessage = (msg: string) => transcodeLogs.println(msg);
 
-  const abort = new MessageButton(t("main.abort"));
-  abort.on("Clicked", () => transcode.abortController.abort());
-  const message = new Message({
-    type: Message.Type.NORMAL,
-    content: t("uploader.file.notifiaction.transcoding"),
-    buttons: [abort],
+  const transcodeToastId = toast(t("uploader.file.notifiaction.transcoding"), {
+    action: {
+      label: t("main.abort"),
+      onClick: () => transcode.abortController.abort(),
+    },
+    duration: Number.POSITIVE_INFINITY,
   });
-  notifications.append(message);
-  messages.set(message.id, message);
+  pendingToastIds.add(transcodeToastId);
 
   const { firstFrameFile, firstFrameFileFormat } =
     await fileConverter.GenerateAnimatedImagePreview(
@@ -220,7 +265,6 @@ async function OnlyConvertPreviewImage(ctx: FileConvertContext) {
   imageFile.SetPreviewFile(firstFrameFile, firstFrameFileFormat);
 
   transcode.done();
-  message.remove();
-
-  messages.delete(message.id);
+  toast.dismiss(transcodeToastId);
+  pendingToastIds.delete(transcodeToastId);
 }

@@ -8,7 +8,7 @@ import type {
 import StaticImageConvert from "components/uploader/file-select/convert/static-convert";
 import ImageConverter from "services/converter";
 import { ImageFile } from "services/image-hosting-services";
-import { Message, MessageButton } from "structs/message";
+import { toast } from "sonner";
 
 /**
  * Handles the selection and processing of an image file. It infers the file format,
@@ -23,7 +23,7 @@ import { Message, MessageButton } from "structs/message";
 export default async function (
   context: FileSelectContext,
 ): Promise<ConvertedFile> {
-  const { translation, notifications, transcodeLogs, file } = context;
+  const { translation, transcodeLogs, file } = context;
 
   const { t } = translation;
 
@@ -34,14 +34,7 @@ export default async function (
   if (!sourceFormat) {
     const errorMessage = t("uploader.file.format.not-supported");
     LogMessage(errorMessage);
-    const confirmButton = new MessageButton(t("main.confirm"));
-    notifications.append(
-      new Message({
-        type: Message.Type.ALERT,
-        content: errorMessage,
-        buttons: [confirmButton],
-      }),
-    );
+    toast.error(errorMessage);
 
     throw new Error(errorMessage);
   }
@@ -83,7 +76,7 @@ export default async function (
  * @returns {boolean} - True if a file size changed notification was displayed, false otherwise.
  */
 function ShowFileSizeChangedNotification(context: FileConvertContext): boolean {
-  const { imageFile, transcodeLogs, translation, notifications } = context;
+  const { imageFile, transcodeLogs, translation } = context;
 
   const { t } = translation;
 
@@ -92,21 +85,19 @@ function ShowFileSizeChangedNotification(context: FileConvertContext): boolean {
     const processedSize = FormatFileSize(imageFile.processed.file.size);
 
     if (originalSize !== processedSize) {
-      const confirmButton = new MessageButton(t("main.confirm"));
-      confirmButton.on("Clicked", () => {
-        transcodeLogs.clear();
-      });
-
-      const sizeChangedMessage = new Message({
-        type: Message.Type.ALERT,
-        content: t("uploader.file.notification.converted-size", {
+      toast(
+        t("uploader.file.notification.converted-size", {
           originalSize,
           processedSize,
         }),
-        buttons: [confirmButton],
-      });
-
-      notifications.append(sizeChangedMessage);
+        {
+          action: {
+            label: t("main.confirm"),
+            onClick: () => transcodeLogs.clear(),
+          },
+          duration: Number.POSITIVE_INFINITY,
+        },
+      );
       return true;
     }
   }

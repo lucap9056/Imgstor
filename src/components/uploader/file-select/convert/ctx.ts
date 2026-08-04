@@ -6,8 +6,6 @@ import type {
   ImageFile,
   ImageHostingService,
 } from "services/image-hosting-services";
-import type MessageManager from "structs/message";
-import type { Message } from "structs/message";
 
 export interface ConvertedFile {
   imageFile: ImageFile;
@@ -16,13 +14,12 @@ export interface ConvertedFile {
 
 export interface FileSelectContext {
   translation: UseTranslationResponse<"translation", undefined>;
-  notifications: MessageManager;
-  alerts: MessageManager;
   fileConverter: Converter;
   hostingService: ImageHostingService;
   transcodeLogs: TranscodeLogs;
   file: File;
-  messages: Map<string, Message>;
+  /** Toast ids for still-open progress toasts, so callers can clean them up on failure. */
+  pendingToastIds: Set<string | number>;
 }
 
 export interface FileConvertContext extends FileSelectContext {

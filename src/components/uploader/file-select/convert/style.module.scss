@@ -1,3 +1,65 @@
+.dialog_overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1;
+}
+
+.dialog_content {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 1.25rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(34, 33, 33, 0.76);
+    text-align: center;
+    min-width: 25rem;
+    max-width: 37.5rem;
+    background: #d9e4ff;
+    z-index: 1;
+
+    @media (max-width: 48rem) {
+        min-width: 0;
+        width: 90vw;
+    }
+}
+
+.dialog_buttons {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 1.25rem;
+}
+
+.dialog_button {
+    padding: 0 1.25rem;
+    font-size: 0.875rem;
+    margin: 0.3125rem;
+    line-height: 2rem;
+    height: 2rem;
+    min-width: 5rem;
+    font-weight: bold;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    background-color: $light-secondary-color;
+    color: $light-text-color;
+
+    &:hover {
+        filter: brightness(0.95);
+    }
+
+    &[data-variant="primary"] {
+        background-color: $light-button-color;
+        color: $light-button-text-color;
+
+        &:hover {
+            background-color: $light-button-hover-color;
+        }
+    }
+}
+
 .message {
     position: relative;
 

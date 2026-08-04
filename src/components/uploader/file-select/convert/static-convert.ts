@@ -1,17 +1,16 @@
 import type { FileConvertContext } from "components/uploader/file-select/convert/ctx";
 import { FORMATS } from "services/converter/file-formats";
-import { Message, MessageButton } from "structs/message";
+import { toast } from "sonner";
 
 export default async function (ctx: FileConvertContext) {
   const {
     hostingService,
     transcodeLogs,
     translation,
-    notifications,
+    pendingToastIds,
     fileConverter,
     file,
     imageFile,
-    messages,
     sourceFormat,
   } = ctx;
 
@@ -20,16 +19,15 @@ export default async function (ctx: FileConvertContext) {
   const transcode = transcodeLogs.add();
   const LogMessage = (msg: string) => transcodeLogs.println(msg);
 
-  const abort = new MessageButton(t("main.abort"));
-  abort.on("Clicked", () => transcode.abortController.abort());
-  const message = new Message({
-    type: Message.Type.NORMAL,
-    content: t("uploader.file.notifiaction.transcoding"),
-    buttons: [abort],
+  const transcodeToastId = toast(t("uploader.file.notifiaction.transcoding"), {
+    action: {
+      label: t("main.abort"),
+      onClick: () => transcode.abortController.abort(),
+    },
+    duration: Number.POSITIVE_INFINITY,
   });
 
-  notifications.append(message);
-  messages.set(message.id, message);
+  pendingToastIds.add(transcodeToastId);
 
   if (hostingService.SupportedStaticFormats.includes(sourceFormat.name)) {
     const previewFile = await fileConverter.GenerateStaticImagePreview(
@@ -68,6 +66,6 @@ export default async function (ctx: FileConvertContext) {
   }
 
   transcode.done();
-  message.remove();
-  messages.delete(message.id);
+  toast.dismiss(transcodeToastId);
+  pendingToastIds.delete(transcodeToastId);
 }
