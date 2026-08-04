@@ -1,8 +1,7 @@
 import { faHouse, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useAlerts } from "global-components/alerts";
+import { useConfirm } from "global-components/confirm-dialog";
 import { useLoader } from "global-components/loader";
-import { useNotifications } from "global-components/notifications";
 import type React from "react";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -10,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 import RoutePaths from "route-paths";
 import { useImgstor } from "services/imgstor";
 import ImgstorDB, { type ImgstorImage } from "services/imgstor-db";
-import { Message, MessageButton } from "structs/message";
+import { toast } from "sonner";
 
 import styles from "./style.module.scss";
 
@@ -20,9 +19,8 @@ interface Props {
 
 const Header: React.FC<Props> = ({ image }) => {
   const navigate = useNavigate();
-  const notifications = useNotifications();
   const loader = useLoader();
-  const alerts = useAlerts();
+  const confirm = useConfirm();
   const { t } = useTranslation();
   const imgstorDB = useImgstor().db;
   const [title, setTitle] = useState(ImgstorDB.DecodeText(image.title));
@@ -43,48 +41,42 @@ const Header: React.FC<Props> = ({ image }) => {
     e.stopPropagation();
     e.preventDefault();
 
-    const confirm = new MessageButton(t("main.confirm"));
-    confirm.on("Clicked", () => {
-      const loading = loader.append();
-      const saving = notifications.append(
-        new Message({
-          type: Message.Type.ALERT,
-          content: t("main.saving"),
-        }),
-      );
+    confirm({
+      description: t("viewer.alert.change-title", { old: title, new: value }),
+      buttons: [
+        {
+          label: t("main.cancel"),
+          onClick: () => {
+            setEdit(false);
+            currentTarget.value = title;
+          },
+        },
+        {
+          label: t("main.confirm"),
+          variant: "primary",
+          onClick: () => {
+            const loading = loader.append();
+            const savingToastId = toast.loading(t("main.saving"));
 
-      try {
-        imgstorDB.UpdateImage({ ...image, title: ImgstorDB.EncodeText(value) });
-        imgstorDB.Save();
-      } catch (err) {
-        notifications.append(
-          new Message({
-            type: Message.Type.ERROR,
-            content: (err as Error).message,
-          }),
-        );
-      }
+            try {
+              imgstorDB.UpdateImage({
+                ...image,
+                title: ImgstorDB.EncodeText(value),
+              });
+              imgstorDB.Save();
+            } catch (err) {
+              toast.error((err as Error).message);
+            }
 
-      setTitle(value);
-      setEdit(false);
+            setTitle(value);
+            setEdit(false);
 
-      saving.remove();
-      loading.remove();
+            toast.dismiss(savingToastId);
+            loading.remove();
+          },
+        },
+      ],
     });
-
-    const cancel = new MessageButton(t("main.cancel"));
-    cancel.on("Clicked", () => {
-      setEdit(false);
-      currentTarget.value = title;
-    });
-
-    alerts.append(
-      new Message({
-        type: Message.Type.ALERT,
-        content: t("viewer.alert.change-title", { old: title, new: value }),
-        buttons: [cancel, confirm],
-      }),
-    );
   };
 
   const handleHome = () => {

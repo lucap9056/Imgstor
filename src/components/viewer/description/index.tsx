@@ -1,14 +1,13 @@
 import { faAsterisk, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useAlerts } from "global-components/alerts";
+import { useConfirm } from "global-components/confirm-dialog";
 import { useLoader } from "global-components/loader";
-import { useNotifications } from "global-components/notifications";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useImgstor } from "services/imgstor";
 import ImgstorDB, { type ImgstorImage } from "services/imgstor-db";
-import { Message, MessageButton } from "structs/message";
+import { toast } from "sonner";
 
 import styles from "./style.module.scss";
 
@@ -17,9 +16,8 @@ interface Props {
 }
 
 const Description: React.FC<Props> = ({ image }) => {
-  const notifications = useNotifications();
   const loader = useLoader();
-  const alerts = useAlerts();
+  const confirm = useConfirm();
   const { t } = useTranslation();
   const imgstorDB = useImgstor().db;
   const [description, setDescription] = useState(
@@ -50,55 +48,46 @@ const Description: React.FC<Props> = ({ image }) => {
       return;
     }
 
-    const confirm = new MessageButton(t("main.confirm"));
-    confirm.on("Clicked", () => {
-      const loading = loader.append();
-      const saving = notifications.append(
-        new Message({
-          type: Message.Type.ALERT,
-          content: t("main.saving"),
-        }),
-      );
-
-      try {
-        imgstorDB.UpdateImage({
-          ...image,
-          description: ImgstorDB.EncodeText(value),
-        });
-        imgstorDB.Save();
-      } catch (err) {
-        notifications.append(
-          new Message({
-            type: Message.Type.ERROR,
-            content: (err as Error).message,
-          }),
-        );
-      }
-
-      setDescription(value);
-      setEdit(false);
-
-      saving.remove();
-      loading.remove();
-    });
-
-    const cancel = new MessageButton(t("main.cancel"));
-    cancel.on("Clicked", () => {
-      currentTarget.value = description;
-      setEdit(false);
-      setTextAreaHeight(currentTarget);
-    });
-
-    alerts.append(
-      new Message({
-        type: Message.Type.ALERT,
-        content: t("viewer.alert.change-description", {
-          old: description,
-          new: value,
-        }),
-        buttons: [cancel, confirm],
+    confirm({
+      description: t("viewer.alert.change-description", {
+        old: description,
+        new: value,
       }),
-    );
+      buttons: [
+        {
+          label: t("main.cancel"),
+          onClick: () => {
+            currentTarget.value = description;
+            setEdit(false);
+            setTextAreaHeight(currentTarget);
+          },
+        },
+        {
+          label: t("main.confirm"),
+          variant: "primary",
+          onClick: () => {
+            const loading = loader.append();
+            const savingToastId = toast.loading(t("main.saving"));
+
+            try {
+              imgstorDB.UpdateImage({
+                ...image,
+                description: ImgstorDB.EncodeText(value),
+              });
+              imgstorDB.Save();
+            } catch (err) {
+              toast.error((err as Error).message);
+            }
+
+            setDescription(value);
+            setEdit(false);
+
+            toast.dismiss(savingToastId);
+            loading.remove();
+          },
+        },
+      ],
+    });
   };
 
   const handleChanged = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
