@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Copied from node_modules by scripts/prepare-sql-wasm.ts
+/public/wasm
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

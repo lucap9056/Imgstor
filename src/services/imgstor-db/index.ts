@@ -11,6 +11,7 @@ import ImageTag from "services/imgstor-db/image-tag";
 import Info from "services/imgstor-db/info";
 import Tag, { ImgstorTag } from "services/imgstor-db/tag";
 import initSqlJs, { type Database } from "sql.js";
+import { ToBlobPart } from "structs/blob-part";
 import EventDispatcher from "structs/event-dispatcher";
 
 export { ImgstorHostingService, ImgstorTag, ImgstorImage };
@@ -19,12 +20,12 @@ export type { ImgstorImageSort, SearchImagesArgs };
 
 enum DataFile {
   name = ".db",
-  type = "text/plain",
+  type = "application/octet-stream",
 }
 
 interface ImgstorData {
   fileId: string;
-  data?: string;
+  data?: ArrayBuffer;
 }
 
 type ImgstorDBEventDefinitions = {
@@ -34,16 +35,35 @@ type ImgstorDBEventDefinitions = {
 export type ImgstorDBEvent<T extends keyof ImgstorDBEventDefinitions> =
   CustomEvent<ImgstorDBEventDefinitions[T]>;
 
-enum SqlJs {
-  Host = "https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/",
+const SQLITE_MAGIC = "SQLite format 3\0";
+
+function IsRawSqliteBytes(bytes: Uint8Array): boolean {
+  return (
+    new TextDecoder().decode(bytes.subarray(0, SQLITE_MAGIC.length)) ===
+    SQLITE_MAGIC
+  );
 }
 
-async function LoadDatabase(data: string): Promise<Database> {
+function Base64ToUint8Array(base64: string): Uint8Array {
+  return Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+}
+
+async function LoadDatabase(data: ArrayBuffer): Promise<Database> {
   const sql = await initSqlJs({
-    locateFile: (file) => SqlJs.Host + file,
+    locateFile: (file) => `./wasm/${file}`,
   });
-  const dataBytes = ImgstorDB.Base64ToUint8Array(data);
-  const db = new sql.Database(dataBytes);
+
+  const bytes = new Uint8Array(data);
+  const dbBytes = IsRawSqliteBytes(bytes)
+    ? bytes
+    : Base64ToUint8Array(new TextDecoder().decode(bytes));
+
+  let db: Database;
+  try {
+    db = new sql.Database(dbBytes);
+  } catch {
+    return NewDatabase();
+  }
 
   try {
     Info.ensureVersion(db);
@@ -56,7 +76,7 @@ async function LoadDatabase(data: string): Promise<Database> {
 
 async function NewDatabase(): Promise<Database> {
   const sql = await initSqlJs({
-    locateFile: (file) => SqlJs.Host + file,
+    locateFile: (file) => `./wasm/${file}`,
   });
   const db = new sql.Database();
 
@@ -75,13 +95,10 @@ ${ImageTag.CREATE_CMD}
 }
 
 export default class ImgstorDB extends EventDispatcher<ImgstorDBEventDefinitions> {
-  public static Base64ToUint8Array = (base64: string): Uint8Array =>
-    Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
-
   public static New = async (drive: Drive): Promise<ImgstorDB> => {
     const dataFile = await ImgstorDB.ReadData(drive);
 
-    const db = dataFile.data
+    const db = dataFile.data?.byteLength
       ? await LoadDatabase(dataFile.data)
       : await NewDatabase();
 
@@ -97,7 +114,7 @@ export default class ImgstorDB extends EventDispatcher<ImgstorDBEventDefinitions
             const res = await drive.createFile(DataFile.name, DataFile.type);
 
             if (!res.id) {
-              return reject(new Error());
+              return reject(new Error("Failed to create database file."));
             }
 
             return resolve({ fileId: res.id });
@@ -106,11 +123,11 @@ export default class ImgstorDB extends EventDispatcher<ImgstorDBEventDefinitions
           const fileId = res.files[0].id;
 
           if (!fileId) {
-            return reject(new Error());
+            return reject(new Error("Database file entry has no ID."));
           }
 
           drive
-            .readFile(fileId)
+            .readFileBuffer(fileId)
             .then((data) => {
               resolve({ fileId, data });
             })
@@ -256,7 +273,6 @@ export default class ImgstorDB extends EventDispatcher<ImgstorDBEventDefinitions
     const { drive, db, dataFile } = this;
 
     const dataBytes = db.export();
-    const data = btoa(String.fromCharCode(...dataBytes));
 
     this.changed = false;
 
@@ -264,13 +280,15 @@ export default class ImgstorDB extends EventDispatcher<ImgstorDBEventDefinitions
       const res = await drive.createFile(DataFile.name, DataFile.type);
 
       if (!res.id) {
-        throw new Error();
+        throw new Error("Failed to create database file.");
       }
 
       dataFile.fileId = res.id;
     }
 
-    const dataBlob = new Blob([data], { type: DataFile.type });
+    const dataBlob = new Blob([ToBlobPart(dataBytes)], {
+      type: DataFile.type,
+    });
     const file = new File([dataBlob], DataFile.name, { type: DataFile.type });
 
     await drive.writeFile(dataFile.fileId, file);
