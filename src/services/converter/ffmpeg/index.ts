@@ -6,6 +6,7 @@ import {
   type FormatNames,
   type LogPrinter,
 } from "services/converter/file-formats";
+import { ToBlobPart } from "structs/blob-part";
 import Imgproc from "../imgproc";
 
 const formatCommands: Partial<{ [name in FormatNames]: string }> = {
@@ -109,7 +110,7 @@ async function ConvertStatic(
 
         const convertedFile = await ffmpeg
           .readFile(convertedFilePath)
-          .then((d) => new Blob([d], { type: mimeType }));
+          .then((d) => new Blob([ToBlobPart(d)], { type: mimeType }));
 
         resolve(convertedFile);
       } catch (err) {
@@ -249,12 +250,14 @@ async function ConvertAnimation<T extends boolean>(
             (async () => {
               await ffmpeg.exec(cmds.split(/ /));
               const convertedBlob = await ffmpeg.readFile(convertedFilePath);
-              return new Blob([convertedBlob], { type: mimeType });
+              return new Blob([ToBlobPart(convertedBlob)], { type: mimeType });
             })(),
             (async () => {
               await ffmpeg.exec(firstFrameCommand);
               const previewImageBlob = await ffmpeg.readFile(firstFramePath);
-              return new Blob([previewImageBlob], { type: mimeType });
+              return new Blob([ToBlobPart(previewImageBlob)], {
+                type: mimeType,
+              });
             })(),
           ]);
 
@@ -274,7 +277,9 @@ async function ConvertAnimation<T extends boolean>(
         } else {
           await ffmpeg.exec(cmds.split(/ /));
           const convertedBlob = await ffmpeg.readFile(convertedFilePath);
-          const convertedFile = new Blob([convertedBlob], { type: mimeType });
+          const convertedFile = new Blob([ToBlobPart(convertedBlob)], {
+            type: mimeType,
+          });
 
           resolve({
             converted: {
@@ -359,9 +364,11 @@ async function ExtractFirstFrameFromAnimation(
         const firstFrameFile = await ffmpeg.readFile(outputPath);
 
         resolve({
-          firstFrameFile: new File([firstFrameFile], outputFileName, {
-            type: targetFormat.mimeType,
-          }),
+          firstFrameFile: new File(
+            [ToBlobPart(firstFrameFile)],
+            outputFileName,
+            { type: targetFormat.mimeType },
+          ),
           firstFrameFileFormat: targetFormat,
         });
       } catch (err) {

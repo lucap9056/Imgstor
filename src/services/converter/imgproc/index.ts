@@ -15,6 +15,7 @@ import type {
   GetFirstFrameResponse,
   LogResponse,
 } from "services/converter/imgproc/worker";
+import { ToBlobPart } from "structs/blob-part";
 
 const DECODE_STATIC_IMAGE_SUPPORTED_INPUT_FORMATS: FormatNames[] = ["PSD"];
 
@@ -124,7 +125,7 @@ export default class Imgproc {
         const decodedFileFormat = FORMATS.PNG;
 
         const decodedFile = new File(
-          [e.data.decodedFile],
+          [ToBlobPart(e.data.decodedFile)],
           file.name.replace(/(\.[^.]+)$/, decodedFileFormat.fileExtension[0]),
           { type: decodedFileFormat.mimeType },
         );
@@ -217,14 +218,14 @@ export default class Imgproc {
         }
 
         const convertedFile = new File(
-          [e.data.convertedFile],
+          [ToBlobPart(e.data.convertedFile)],
           file.name.replace(/(\.[^.]+)$/, targetFormat.fileExtension[0]),
           { type: targetFormat.mimeType },
         );
 
         const firstFrameFormat = FORMATS.PNG;
         const firstFrame = new File(
-          [e.data.firstFrame],
+          [ToBlobPart(e.data.firstFrame)],
           file.name.replace(/(\.[^.]+)$/, firstFrameFormat.fileExtension[0]),
           { type: firstFrameFormat.mimeType },
         );
@@ -284,7 +285,7 @@ export default class Imgproc {
         const firstFrameFileFormat = FORMATS.PNG;
 
         const firstFrameFile = new File(
-          [e.data.firstFrame],
+          [ToBlobPart(e.data.firstFrame)],
           file.name.replace(
             /(\.[^.]+)$/,
             firstFrameFileFormat.fileExtension[0],
