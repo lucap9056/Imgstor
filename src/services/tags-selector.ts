@@ -68,6 +68,6 @@ export default class TagsSelector extends EventDispatcher<TagsSelectorEventDefin
   }
 
   public delTag(id: string): void {
-    return this.db.DeleteTag(id);
+    this.db.DeleteTag(id);
   }
 }
