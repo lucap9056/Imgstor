@@ -15,6 +15,7 @@
   "main.delete": "刪除",
   "menu.settings": "設定",
   "menu.signout": "登出",
+  "menu.alert.signout": "確定要登出嗎？",
   "settings.option.hosting-service": "圖片託管服務",
   "settings.option.storage": "儲存空間",
   "settings.hosting-service.description.local": "測試模式：檔案不會上傳，而是直接下載到本機儲存",

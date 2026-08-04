@@ -23,7 +23,10 @@
     },
     "menu": {
         "settings": "Settings",
-        "signout": "Sign out"
+        "signout": "Sign out",
+        "alert": {
+            "signout": "Are you sure you want to sign out?"
+        }
     },
     "settings": {
         "option": {

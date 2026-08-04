@@ -6,10 +6,12 @@ import {
   faRightFromBracket,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useConfirm } from "global-components/confirm-dialog";
 import { useLoader } from "global-components/loader";
 import cookies from "js-cookie";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import RoutePaths from "route-paths";
 import { type SearchContent, useImgstor } from "services/imgstor";
@@ -24,9 +26,11 @@ import SortSelector from "./options/sort-selector";
 import styles from "./style.module.scss";
 
 const SideOptions: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const imgstor = useImgstor();
   const loader = useLoader();
+  const confirm = useConfirm();
   const [sidePage, setSidePage] = useState<React.ReactNode>();
   const [sidePageName, setSidePageName] = useState<string>();
   const [searchContent, setSearchContent] = useState<SearchContent>();
@@ -85,11 +89,23 @@ const SideOptions: React.FC = () => {
     }
   };
 
-  const handleLogout = async () => {
-    const loading = loader.append();
-    await imgstor.logout();
-    loading.remove();
-    location.reload();
+  const handleLogout = () => {
+    confirm({
+      description: t("menu.alert.signout"),
+      buttons: [
+        { label: t("main.cancel") },
+        {
+          label: t("main.confirm"),
+          variant: "danger",
+          onClick: async () => {
+            const loading = loader.append();
+            await imgstor.logout();
+            loading.remove();
+            location.reload();
+          },
+        },
+      ],
+    });
   };
 
   return (
