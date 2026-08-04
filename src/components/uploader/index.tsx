@@ -3,9 +3,8 @@ import HostingServiceSelect from "components/uploader/hosting-service-select";
 import ImportExternalComponent from "components/uploader/import-external";
 import TagsSelect from "components/uploader/tags-select";
 import TranscodeLogs from "components/uploader/transcode-logs";
-import { useAlerts } from "global-components/alerts";
+import { useConfirm } from "global-components/confirm-dialog";
 import { useLoader } from "global-components/loader";
-import { useNotifications } from "global-components/notifications";
 import type React from "react";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -19,14 +18,13 @@ import ImportExternal from "services/image-hosting-services/import-external";
 import Local from "services/image-hosting-services/local";
 import { useImgstor } from "services/imgstor";
 import type { ImgstorTag } from "services/imgstor-db";
-import { Message, MessageButton } from "structs/message";
+import { toast } from "sonner";
 
 import styles from "./style.module.scss";
 
 const Uploader: React.FC = () => {
-  const notifications = useNotifications();
   const loader = useLoader();
-  const alerts = useAlerts();
+  const confirm = useConfirm();
   const { t } = useTranslation();
   const imgstor = useImgstor();
   const [selectedFile, SetSelectedFile] = useState<ImageFile>();
@@ -61,35 +59,21 @@ const Uploader: React.FC = () => {
       imgstor.db.InsertImageTag(imageId, tagId);
     }
 
-    const saving = new Message({
-      type: Message.Type.NORMAL,
-      content: t("uploader.notification.saving"),
-    });
-    notifications.append(saving);
+    const savingToastId = toast.loading(t("uploader.notification.saving"));
     try {
       await imgstor.db.Save();
     } catch {
-      notifications.append(
-        new Message({
-          type: Message.Type.ERROR,
-          content: t("uploader.notification.save-failed"),
-        }),
-      );
+      toast.error(t("uploader.notification.save-failed"));
     }
-    saving.remove();
+    toast.dismiss(savingToastId);
 
-    const confirm = new MessageButton(t("main.confirm"));
-    confirm.on("Clicked", () => {
-      navigate(RoutePaths.HOME);
+    toast.success(t("uploader.notification.uploaded"), {
+      action: {
+        label: t("main.confirm"),
+        onClick: () => navigate(RoutePaths.HOME),
+      },
+      duration: Number.POSITIVE_INFINITY,
     });
-
-    alerts.append(
-      new Message({
-        type: Message.Type.ALERT,
-        content: t("uploader.notification.uploaded"),
-        buttons: [confirm],
-      }),
-    );
   };
 
   const DefaultUploadImage = async (
@@ -110,74 +94,54 @@ const Uploader: React.FC = () => {
       try {
         await imgstor.db.Save();
       } catch {
-        notifications.append(
-          new Message({
-            type: Message.Type.ERROR,
-            content: t("uploader.notification.save-failed"),
-          }),
-        );
+        toast.error(t("uploader.notification.save-failed"));
       }
 
-      const copyLinkButton = new MessageButton(t("uploader.copy-link"), {
-        auto_remove: false,
+      confirm({
+        description: t("uploader.notification.uploaded"),
+        buttons: [
+          {
+            label: t("uploader.copy-link"),
+            keepOpen: true,
+            onClick: () => {
+              navigator.clipboard.writeText(image.imageUrl);
+              toast.success(t("uploader.notification.link-copied"));
+            },
+          },
+          {
+            label: t("main.confirm"),
+            variant: "primary",
+            onClick: () => navigate(RoutePaths.HOME),
+          },
+        ],
       });
-      copyLinkButton.on("Clicked", () => {
-        navigator.clipboard.writeText(image.imageUrl);
-
-        notifications.append(
-          new Message({
-            type: Message.Type.NORMAL,
-            content: t("uploader.notification.link-copied"),
-          }),
-        );
-      });
-
-      const confirmButton = new MessageButton(t("main.confirm"));
-      confirmButton.on("Clicked", () => {
-        navigate(RoutePaths.HOME);
-      });
-
-      alerts.append(
-        new Message({
-          type: Message.Type.ALERT,
-          content: t("uploader.notification.uploaded"),
-          buttons: [copyLinkButton, confirmButton],
-        }),
-      );
     } else {
-      const deleteButton = new MessageButton("main.delete");
-      deleteButton.on("Clicked", () => {
-        hostingService.Delete(image);
-        navigate(RoutePaths.HOME);
+      confirm({
+        description: t("uploader.notification.uploaded"),
+        buttons: [
+          {
+            label: t("main.delete"),
+            variant: "danger",
+            onClick: () => {
+              hostingService.Delete(image);
+              navigate(RoutePaths.HOME);
+            },
+          },
+          {
+            label: t("uploader.copy-link"),
+            keepOpen: true,
+            onClick: () => {
+              navigator.clipboard.writeText(image.imageUrl);
+              toast.success(t("uploader.notification.link-copied"));
+            },
+          },
+          {
+            label: t("main.confirm"),
+            variant: "primary",
+            onClick: () => navigate(RoutePaths.HOME),
+          },
+        ],
       });
-
-      const copyLinkButton = new MessageButton(t("uploader.copy-link"), {
-        auto_remove: false,
-      });
-
-      copyLinkButton.on("Clicked", () => {
-        navigator.clipboard.writeText(image.imageUrl);
-
-        notifications.append(
-          new Message({
-            type: Message.Type.NORMAL,
-            content: t("uploader.notification.link-copied"),
-          }),
-        );
-      });
-
-      const confirmButton = new MessageButton(t("main.confirm"));
-      confirmButton.on("Clicked", () => {
-        navigate(RoutePaths.HOME);
-      });
-
-      alerts.append(
-        new Message({
-          type: Message.Type.ALERT,
-          content: t("uploader.notification.uploaded"),
-          buttons: [deleteButton, copyLinkButton, confirmButton],
-        }),
-      );
     }
   };
 
@@ -188,11 +152,9 @@ const Uploader: React.FC = () => {
 
     const loading = loader.append();
 
-    const notification = new Message({
-      type: Message.Type.NORMAL,
-      content: t("uploader.notification.uploading"),
-    });
-    notifications.append(notification);
+    const uploadingToastId = toast.loading(
+      t("uploader.notification.uploading"),
+    );
 
     file.title = (form.get("title") || "").toString();
     file.description = (form.get("description") || "").toString();
@@ -213,16 +175,11 @@ const Uploader: React.FC = () => {
           break;
       }
     } catch (err) {
-      notifications.append(
-        new Message({
-          type: Message.Type.ERROR,
-          content: (err as Error).message,
-        }),
-      );
+      toast.error((err as Error).message);
     }
 
     loading.remove();
-    notification.remove();
+    toast.dismiss(uploadingToastId);
   };
 
   const HandleUpload = (e: React.FormEvent<HTMLFormElement>) => {
@@ -236,20 +193,17 @@ const Uploader: React.FC = () => {
 
     const form = new FormData(e.target as HTMLFormElement);
 
-    const cancel = new MessageButton(t("main.cancel"));
-
-    const confirm = new MessageButton(t("main.confirm"));
-    confirm.on("Clicked", () => {
-      ConfirmUploadImage(form, selectedFile);
+    confirm({
+      description: t("uploader.alert.upload"),
+      buttons: [
+        { label: t("main.cancel") },
+        {
+          label: t("main.confirm"),
+          variant: "primary",
+          onClick: () => ConfirmUploadImage(form, selectedFile),
+        },
+      ],
     });
-
-    alerts.append(
-      new Message({
-        type: Message.Type.NORMAL,
-        content: t("uploader.alert.upload"),
-        buttons: [cancel, confirm],
-      }),
-    );
   };
 
   const HandleCancel = () => {
