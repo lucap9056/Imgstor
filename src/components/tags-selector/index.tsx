@@ -85,7 +85,7 @@ const TagsSelector: React.FC = () => {
     return () => {
       imgstor.tagsSelector.off("DisplayChanged", displayChangedHandler);
     };
-  }, []);
+  }, [imgstor, loader, notifications, t]);
 
   const handleRemoveTag = (tag: ImgstorTag) => {
     const { tagId, name } = tag;
@@ -131,6 +131,7 @@ const TagsSelector: React.FC = () => {
     setSelectedTags([...selected]);
   };
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: handleRemoveTag/handleSelectTag/handleUnselectTag are recreated every render; adding them would rebind the drag listeners on every render while dragging instead of only when draggingTag changes
   useEffect(() => {
     const container = selector.current;
     const select = selected.current;
@@ -269,7 +270,7 @@ const TagsSelector: React.FC = () => {
   };
 
   if (target === undefined) {
-    return <></>;
+    return null;
   }
 
   return (
