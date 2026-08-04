@@ -1,5 +1,5 @@
 import Loader, { useLoader } from "global-components/loader";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HashRouter, Route, Routes } from "react-router-dom";
 import { buildResult, match } from "resultant.js/rustify";
@@ -14,49 +14,15 @@ import TagsSelector from "components/tags-selector";
 import Uploader from "components/uploader";
 import MainView from "components/viewer";
 import RoutePaths from "route-paths/index";
-import Google, { NotSignedInError } from "services/google";
+import Google from "services/google";
 import Imgstor, { ImgstorProvider } from "services/imgstor";
 
 function App() {
   const loader = useLoader();
-
   const { t } = useTranslation();
   const [imgstor, SetImgstor] = useState<Imgstor>();
-  const [loaded, setLoaded] = useState(false);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally runs once on mount to initialize Google/Imgstor; re-running on t/loader changes (e.g. language switch) would needlessly restart sign-in
-  useEffect(() => {
-    const loading = loader.append();
-
-    const loadingToastId = toast.loading(t("google.loading"));
-
-    buildResult(async () => {
-      const google = await Google.new();
-      return Imgstor.New(google);
-    }).then((result) => {
-      match(result, {
-        Ok(value) {
-          SetImgstor(value);
-        },
-        Err(err) {
-          console.log(err);
-          if (err instanceof NotSignedInError) {
-            SetImgstor(undefined);
-          } else {
-            toast.error((err as Error).message);
-          }
-        },
-      });
-
-      setLoaded(true);
-      loading.remove();
-      toast.dismiss(loadingToastId);
-    });
-  }, []);
 
   const HandleSignIn = async () => {
-    setLoaded(false);
-
     const loading = loader.append();
 
     const result = await buildResult(async () => {
@@ -74,38 +40,32 @@ function App() {
       },
     });
 
-    setLoaded(true);
     loading.remove();
   };
 
   return (
     <>
-      {loaded ? (
-        imgstor ? (
-          <ImgstorProvider value={imgstor}>
-            <HashRouter>
-              <Images />
-              <SideOptions />
-              <Routes>
-                <Route path={RoutePaths.UPLOAD} element={<Uploader />} />
-                <Route
-                  path={`${RoutePaths.FOCUS_VIEW}/:imageId`}
-                  element={<MainView />}
-                />
-                <Route
-                  path={`${RoutePaths.SETTINGS}/*`}
-                  element={<Settings />}
-                />
-                <Route index element={null} />
-              </Routes>
-            </HashRouter>
+      {imgstor ? (
+        <ImgstorProvider value={imgstor}>
+          <HashRouter>
+            <Images />
+            <SideOptions />
+            <Routes>
+              <Route path={RoutePaths.UPLOAD} element={<Uploader />} />
+              <Route
+                path={`${RoutePaths.FOCUS_VIEW}/:imageId`}
+                element={<MainView />}
+              />
+              <Route path={`${RoutePaths.SETTINGS}/*`} element={<Settings />} />
+              <Route index element={null} />
+            </Routes>
+          </HashRouter>
 
-            <TagsSelector />
-          </ImgstorProvider>
-        ) : (
-          <SignIn onSignIn={HandleSignIn} />
-        )
-      ) : null}
+          <TagsSelector />
+        </ImgstorProvider>
+      ) : (
+        <SignIn onSignIn={HandleSignIn} />
+      )}
 
       <Loader.Component />
       <Toaster />

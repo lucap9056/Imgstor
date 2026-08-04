@@ -1,12 +1,5 @@
 import EventDispatcher from "structs/event-dispatcher";
 
-export class NotSignedInError extends Error {
-  constructor(message: string = "User is not signed in.") {
-    super(message);
-    this.name = "NotSignedInError";
-  }
-}
-
 type GoogleEventDefinitions = {
   StatusChanged: { signedIn: boolean };
   ErrorOccurred: { message: string; error: Error };
@@ -55,22 +48,13 @@ export default class Google extends EventDispatcher<GoogleEventDefinitions> {
   private accessToken: string;
   private refreshTimeoutId?: ReturnType<typeof setTimeout>;
 
-  public static new = async (): Promise<Google> => {
+  public static signIn = async (): Promise<Google> => {
     let response: google.accounts.oauth2.TokenResponse;
     try {
       response = await RequestAccessToken("");
     } catch {
-      throw new NotSignedInError();
+      response = await RequestAccessToken("consent");
     }
-
-    currentAccessToken = response.access_token;
-    const drive = await Drive.new();
-
-    return new Google(response, drive);
-  };
-
-  public static signIn = async (): Promise<Google> => {
-    const response = await RequestAccessToken("consent");
 
     currentAccessToken = response.access_token;
     const drive = await Drive.new();
