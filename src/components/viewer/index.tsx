@@ -7,9 +7,8 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import TranscodeLogs from "components/uploader/transcode-logs";
-import { useAlerts } from "global-components/alerts";
+import { useConfirm } from "global-components/confirm-dialog";
 import { useLoader } from "global-components/loader";
-import { useNotifications } from "global-components/notifications";
 import type React from "react";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -24,7 +23,7 @@ import {
 import ImportExternal from "services/image-hosting-services/import-external";
 import { useImgstor } from "services/imgstor";
 import type { ImgstorImage } from "services/imgstor-db";
-import { Message, MessageButton } from "structs/message";
+import { toast } from "sonner";
 import Description from "./description";
 import Header from "./header";
 import Image from "./image";
@@ -33,9 +32,8 @@ import styles from "./style.module.scss";
 import Tags from "./tags";
 
 const MainViewer: React.FC = () => {
-  const notifications = useNotifications();
   const loader = useLoader();
-  const alerts = useAlerts();
+  const confirm = useConfirm();
   const imgstor = useImgstor();
   const { imageId } = useParams();
   const navigate = useNavigate();
@@ -69,32 +67,19 @@ const MainViewer: React.FC = () => {
     if (!image) return;
     navigator.clipboard.writeText(image.imageUrl);
 
-    notifications.append(
-      new Message({
-        type: Message.Type.NORMAL,
-        content: t("viewer.notification.link-copied"),
-      }),
-    );
-  }, [image, notifications, t]);
+    toast.success(t("viewer.notification.link-copied"));
+  }, [image, t]);
 
   const HandleDownload = useCallback(async () => {
     if (!image) return;
 
     if (image.fileId === "") {
-      notifications.append(
-        new Message({
-          type: Message.Type.NORMAL,
-          content: t("viewer.notification.not-stored"),
-        }),
-      );
+      toast(t("viewer.notification.not-stored"));
       return;
     }
 
     const loading = loader.append();
-    const downloading = new Message({
-      type: Message.Type.ALERT,
-      content: t("viewer.alert.downloading"),
-    });
+    const downloadingToastId = toast.loading(t("viewer.alert.downloading"));
     try {
       const file = await imgstor.DownloadImage(image);
       const a = document.createElement("a");
@@ -104,16 +89,11 @@ const MainViewer: React.FC = () => {
       a.click();
       URL.revokeObjectURL(a.href);
     } catch {
-      notifications.append(
-        new Message({
-          type: Message.Type.ERROR,
-          content: t("viewer.notification.download-failed"),
-        }),
-      );
+      toast.error(t("viewer.notification.download-failed"));
     }
     loading.remove();
-    downloading.remove();
-  }, [image, notifications, t, loader, imgstor]);
+    toast.dismiss(downloadingToastId);
+  }, [image, t, loader, imgstor]);
 
   const FileConvert = useCallback(
     async (file: File): Promise<ImageFile> => {
@@ -124,7 +104,7 @@ const MainViewer: React.FC = () => {
       const fileConverter = imgstor.converter;
       const LogMessage = (msg: string) => transcodeLogs.println(msg);
 
-      const messages: { [id: string]: Message } = {};
+      const pendingToastIds: (string | number)[] = [];
 
       try {
         const sourceFormat = Converter.InferFileFormat(file);
@@ -134,13 +114,15 @@ const MainViewer: React.FC = () => {
         }
 
         const animationDetecting = transcodeLogs.add();
-        const animationDetectAbort = new MessageButton(t("main.abort"));
-        const animationDetectMessage = notifications.append(
-          new Message({
-            type: Message.Type.NORMAL,
-            content: t("uploader.file.notifiaction.aniation-detecting"),
-            buttons: [animationDetectAbort],
-          }),
+        const animationDetectToastId = toast(
+          t("uploader.file.notifiaction.aniation-detecting"),
+          {
+            action: {
+              label: t("main.abort"),
+              onClick: () => animationDetecting.abortController.abort(),
+            },
+            duration: Number.POSITIVE_INFINITY,
+          },
         );
 
         const dynamic = await fileConverter.DetectAnimation(
@@ -148,7 +130,7 @@ const MainViewer: React.FC = () => {
           file,
           LogMessage,
         );
-        animationDetectMessage.remove();
+        toast.dismiss(animationDetectToastId);
         animationDetecting.remove();
 
         const imageFile = new ImageFile(file, sourceFormat);
@@ -165,17 +147,18 @@ const MainViewer: React.FC = () => {
 
             const transcode = transcodeLogs.add();
 
-            const abort = new MessageButton("abort");
-            abort.on("Clicked", () => transcode.abortController.abort());
-            const message = notifications.append(
-              new Message({
-                type: Message.Type.NORMAL,
-                content: t("uploader.file.notifiaction.transcoding"),
-                buttons: [abort],
-              }),
+            const transcodeToastId = toast(
+              t("uploader.file.notifiaction.transcoding"),
+              {
+                action: {
+                  label: t("main.abort"),
+                  onClick: () => transcode.abortController.abort(),
+                },
+                duration: Number.POSITIVE_INFINITY,
+              },
             );
 
-            messages[message.id] = message;
+            pendingToastIds.push(transcodeToastId);
 
             const { converted, firstFrame } =
               await fileConverter.ConvertAnimatedImage(
@@ -187,8 +170,11 @@ const MainViewer: React.FC = () => {
                 LogMessage,
               );
             transcode.done();
-            message.remove();
-            delete messages[message.id];
+            toast.dismiss(transcodeToastId);
+            pendingToastIds.splice(
+              pendingToastIds.indexOf(transcodeToastId),
+              1,
+            );
             if (converted.file.size === 0) {
               throw new Error("fail");
             }
@@ -207,17 +193,18 @@ const MainViewer: React.FC = () => {
             const targetFormat = FORMATS[targetFormatName];
 
             const transcode = transcodeLogs.add();
-            const abort = new MessageButton(t("main.abort"));
-            abort.on("Clicked", () => transcode.abortController.abort());
-            const message = notifications.append(
-              new Message({
-                type: Message.Type.NORMAL,
-                content: t("uploader.file.notifiaction.transcoding"),
-                buttons: [abort],
-              }),
+            const transcodeToastId = toast(
+              t("uploader.file.notifiaction.transcoding"),
+              {
+                action: {
+                  label: t("main.abort"),
+                  onClick: () => transcode.abortController.abort(),
+                },
+                duration: Number.POSITIVE_INFINITY,
+              },
             );
 
-            messages[message.id] = message;
+            pendingToastIds.push(transcodeToastId);
             const processesFile = await fileConverter.ConvertStaticImage(
               transcode.abortController,
               file,
@@ -225,8 +212,11 @@ const MainViewer: React.FC = () => {
               LogMessage,
             );
             transcode.done();
-            message.remove();
-            delete messages[message.id];
+            toast.dismiss(transcodeToastId);
+            pendingToastIds.splice(
+              pendingToastIds.indexOf(transcodeToastId),
+              1,
+            );
             if (processesFile.size === 0) {
               throw new Error("fail");
             }
@@ -242,21 +232,18 @@ const MainViewer: React.FC = () => {
             imageFile.processed.file,
           );
 
-          const confirm = new MessageButton(t("main.confirm"));
-
-          confirm.on("Clicked", () => {
-            transcodeLogs.clear();
-          });
-
-          notifications.append(
-            new Message({
-              type: Message.Type.NORMAL,
-              content: t("uploader.file.notifiaction.converted-size", {
-                originalSize,
-                processedSize,
-              }),
-              buttons: [confirm],
+          toast(
+            t("uploader.file.notifiaction.converted-size", {
+              originalSize,
+              processedSize,
             }),
+            {
+              action: {
+                label: t("main.confirm"),
+                onClick: () => transcodeLogs.clear(),
+              },
+              duration: Number.POSITIVE_INFINITY,
+            },
           );
         } else if (transcodeLogs.visibled) {
           transcodeLogs.clear();
@@ -265,27 +252,23 @@ const MainViewer: React.FC = () => {
         return imageFile;
       } catch (err) {
         LogMessage((err as Error).message);
-        Object.keys(messages).forEach((id) => {
-          messages[id].remove();
-          delete messages[id];
-        });
+        for (const id of pendingToastIds) {
+          toast.dismiss(id);
+        }
+        pendingToastIds.length = 0;
 
-        const confirm = new MessageButton(t("main.confirm"));
-        confirm.on("Clicked", () => {
-          transcodeLogs.clear();
+        toast.error((err as Error).message, {
+          action: {
+            label: t("main.confirm"),
+            onClick: () => transcodeLogs.clear(),
+          },
+          duration: Number.POSITIVE_INFINITY,
         });
-        notifications.append(
-          new Message({
-            type: Message.Type.ALERT,
-            content: (err as Error).message,
-            buttons: [confirm],
-          }),
-        );
 
         throw err;
       }
     },
-    [hostingService, imgstor, t, notifications, transcodeLogs],
+    [hostingService, imgstor, t, transcodeLogs],
   );
 
   const HandleReupload = useCallback(() => {
@@ -296,64 +279,54 @@ const MainViewer: React.FC = () => {
     }
 
     if (image.fileId === "") {
-      notifications.append(
-        new Message({
-          type: Message.Type.NORMAL,
-          content: t("viewer.notification.not-stored"),
-        }),
-      );
+      toast(t("viewer.notification.not-stored"));
       return;
     }
 
-    const confirm = new MessageButton(t("main.confirm"));
-    confirm.on("Clicked", async () => {
-      if (!hostingService) {
-        return;
-      }
+    confirm({
+      description: t("viewer.alert.reupload"),
+      buttons: [
+        { label: t("main.cancel") },
+        {
+          label: t("main.confirm"),
+          variant: "primary",
+          onClick: async () => {
+            if (!hostingService) {
+              return;
+            }
 
-      try {
-        const [file] = await Promise.all([
-          imgstor.DownloadImage(image),
-          hostingService.Delete(image),
-        ]);
+            try {
+              const [file] = await Promise.all([
+                imgstor.DownloadImage(image),
+                hostingService.Delete(image),
+              ]);
 
-        const convertedFile = await FileConvert(file);
+              const convertedFile = await FileConvert(file);
 
-        convertedFile.title = image.title;
-        convertedFile.description = image.description;
+              convertedFile.title = image.title;
+              convertedFile.description = image.description;
 
-        const uploadedImage = await hostingService.Upload(true, convertedFile);
+              const uploadedImage = await hostingService.Upload(
+                true,
+                convertedFile,
+              );
 
-        imgstor.db.UpdateImage({
-          ...uploadedImage,
-          imageId: image.imageId,
-          fileId: image.fileId,
-        });
-        await imgstor.db.Save();
+              imgstor.db.UpdateImage({
+                ...uploadedImage,
+                imageId: image.imageId,
+                fileId: image.fileId,
+              });
+              await imgstor.db.Save();
 
-        SetImage(uploadedImage);
-      } catch (err) {
-        alerts.append(
-          new Message({
-            type: Message.Type.ERROR,
-            content: (err as Error).message,
-          }),
-        );
-      }
+              SetImage(uploadedImage);
+            } catch (err) {
+              toast.error((err as Error).message);
+            }
+          },
+        },
+      ],
     });
-
-    /**
-     *
-     */
-
-    alerts.append(
-      new Message({
-        type: Message.Type.ALERT,
-        content: t("viewer.alert.reupload"),
-        buttons: [new MessageButton(t("main.cancel")), confirm],
-      }),
-    );
-  }, [image, hostingService, imgstor, alerts, notifications, t, FileConvert]);
+  }, [image, hostingService, imgstor, confirm, t, FileConvert]);
 
   if (!imageId || !image) {
     return null;
@@ -362,12 +335,7 @@ const MainViewer: React.FC = () => {
   const Delete = async () => {
     const loading = loader.append();
 
-    const removing = notifications.append(
-      new Message({
-        type: Message.Type.NORMAL,
-        content: t("viewer.notifiaction.deleting"),
-      }),
-    );
+    const removingToastId = toast.loading(t("viewer.notifiaction.deleting"));
 
     try {
       const hostingService =
@@ -383,34 +351,28 @@ const MainViewer: React.FC = () => {
 
       await imgstor.db.Save();
     } catch (err) {
-      alerts.append(
-        new Message({
-          type: Message.Type.ERROR,
-          content: (err as Error).message,
-        }),
-      );
+      toast.error((err as Error).message);
     } finally {
       loading.remove();
-      removing.remove();
+      toast.dismiss(removingToastId);
     }
   };
 
   const HandleDelete = () => {
-    const cancel = new MessageButton(t("main.cancel"));
-
-    const confirm = new MessageButton(t("main.confirm"));
-    confirm.on("Clicked", async () => {
-      await Delete();
-      navigate(RoutePaths.HOME);
+    confirm({
+      description: t("viewer.alert.delete"),
+      buttons: [
+        { label: t("main.cancel") },
+        {
+          label: t("main.confirm"),
+          variant: "danger",
+          onClick: async () => {
+            await Delete();
+            navigate(RoutePaths.HOME);
+          },
+        },
+      ],
     });
-
-    alerts.append(
-      new Message({
-        type: Message.Type.ALERT,
-        content: t("viewer.alert.delete"),
-        buttons: [cancel, confirm],
-      }),
-    );
   };
 
   const options: Option[] = [
