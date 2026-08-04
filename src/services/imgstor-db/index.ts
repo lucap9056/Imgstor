@@ -252,7 +252,7 @@ export default class ImgstorDB extends EventDispatcher<ImgstorDBEventDefinitions
     return this.changed;
   }
 
-  public Save(): Promise<ImgstorData> {
+  public async Save(): Promise<ImgstorData> {
     const { drive, db, dataFile } = this;
 
     const dataBytes = db.export();
@@ -260,24 +260,22 @@ export default class ImgstorDB extends EventDispatcher<ImgstorDBEventDefinitions
 
     this.changed = false;
 
-    return new Promise(async (resolve, reject) => {
-      if (dataFile.fileId === "") {
-        const res = await drive.createFile(DataFile.name, DataFile.type);
+    if (dataFile.fileId === "") {
+      const res = await drive.createFile(DataFile.name, DataFile.type);
 
-        if (!res.id) {
-          return reject(new Error());
-        }
-
-        dataFile.fileId = res.id;
+      if (!res.id) {
+        throw new Error();
       }
 
-      const dataBlob = new Blob([data], { type: DataFile.type });
-      const file = new File([dataBlob], DataFile.name, { type: DataFile.type });
+      dataFile.fileId = res.id;
+    }
 
-      await drive.writeFile(dataFile.fileId, file);
+    const dataBlob = new Blob([data], { type: DataFile.type });
+    const file = new File([dataBlob], DataFile.name, { type: DataFile.type });
 
-      resolve(dataFile);
-    });
+    await drive.writeFile(dataFile.fileId, file);
+
+    return dataFile;
   }
 
   private get lastInsertRowid(): string {

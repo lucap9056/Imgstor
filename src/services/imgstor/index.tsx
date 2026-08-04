@@ -169,6 +169,8 @@ export default class Imgstor extends EventDispatcher<ImgstorEventDefinitions> {
             const { isEnabled, proxy, token, separatePreviewUpload } = smms;
             return new Smms(id, isEnabled, proxy, token, separatePreviewUpload);
           }
+          default:
+            return undefined;
         }
       })
       .filter((l) => l !== undefined)
@@ -183,7 +185,7 @@ export default class Imgstor extends EventDispatcher<ImgstorEventDefinitions> {
 
     const { google, filesFolder } = this;
 
-    return new Promise(async (resolve, reject) => {
+    return new Promise((resolve, reject) => {
       google.drive
         .createFile(image.imageId, file.type, filesFolder.id)
         .then(async (res) => {
@@ -239,7 +241,7 @@ export default class Imgstor extends EventDispatcher<ImgstorEventDefinitions> {
   }
 
   public logout(): void {
-    return this.google.signOut();
+    this.google.signOut();
   }
 }
 

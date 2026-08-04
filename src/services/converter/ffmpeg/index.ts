@@ -78,49 +78,51 @@ async function ConvertStatic(
   { mimeType, fileExtension }: FileFormat,
   LogMessage: LogPrinter,
 ): Promise<Blob> {
-  return new Promise(async (resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const ffmpeg = new FFmpeg();
 
     abortController.signal.onabort = () => {
       reject(new Error("Conversion aborted by user."));
     };
 
-    try {
-      await ffmpeg.load(config, {
-        signal: abortController.signal,
+    (async () => {
+      try {
+        await ffmpeg.load(config, {
+          signal: abortController.signal,
+        });
+      } catch (err) {
+        return reject(err);
+      }
+
+      const filePath = `static_convert\\${file.name}`.replace(/ +/g, "_");
+      const convertedFilePath = filePath.replace(/\.[^/.]+$/, fileExtension[0]);
+
+      ffmpeg.on("log", (e) => {
+        LogMessage(e.message);
       });
-    } catch (err) {
-      return reject(err);
-    }
 
-    const filePath = `static_convert\\${file.name}`.replace(/ +/g, "_");
-    const convertedFilePath = filePath.replace(/\.[^/.]+$/, fileExtension[0]);
+      try {
+        const fileData = await fetchFile(file);
 
-    ffmpeg.on("log", (e) => {
-      LogMessage(e.message);
-    });
+        await ffmpeg.writeFile(filePath, fileData);
+        await ffmpeg.exec(["-i", filePath, convertedFilePath]);
 
-    try {
-      const fileData = await fetchFile(file);
+        const convertedFile = await ffmpeg
+          .readFile(convertedFilePath)
+          .then((d) => new Blob([d], { type: mimeType }));
 
-      await ffmpeg.writeFile(filePath, fileData);
-      await ffmpeg.exec(["-i", filePath, convertedFilePath]);
-
-      const convertedFile = await ffmpeg
-        .readFile(convertedFilePath)
-        .then((d) => new Blob([d], { type: mimeType }));
-
-      resolve(convertedFile);
-    } catch (err) {
-      console.error("Error during conversion:", err);
-      reject(
-        new Error(
-          `Conversion failed: ${err instanceof Error ? err.message : String(err)}`,
-        ),
-      );
-    } finally {
-      ffmpeg.terminate();
-    }
+        resolve(convertedFile);
+      } catch (err) {
+        console.error("Error during conversion:", err);
+        reject(
+          new Error(
+            `Conversion failed: ${err instanceof Error ? err.message : String(err)}`,
+          ),
+        );
+      } finally {
+        ffmpeg.terminate();
+      }
+    })();
   });
 }
 
@@ -171,124 +173,129 @@ async function ConvertAnimation<T extends boolean>(
 }> {
   const { name, mimeType, fileExtension } = targetForamt;
 
-  return new Promise(async (resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const ffmpeg = new FFmpeg();
 
     abortController.signal.onabort = () => {
       reject(new Error("Conversion aborted by user."));
     };
 
-    try {
-      await ffmpeg.load(config, {
-        signal: abortController.signal,
-      });
-    } catch (err) {
-      return reject(
-        new Error(
-          `Failed to load FFmpeg: ${err instanceof Error ? err.message : String(err)}`,
-        ),
-      );
-    }
-
-    const filePath = `dynamic_convert\\${file.name}`.replace(/ +/g, "_");
-    const convertedFileName = file.name.replace(/\.[^/.]+$/, fileExtension[0]);
-    const convertedFilePath = `dynamic_convert\\${convertedFileName}`.replace(
-      / +/g,
-      "_",
-    );
-    const firstFrameFormat = FORMATS.PNG;
-    const firstFramePath = `preview_${filePath.replace(/\.[^/.]+$/, `.${firstFrameFormat.fileExtension[0]}`)}`;
-
-    const precmds = formatCommands[name];
-
-    if (!precmds) {
-      return reject(
-        new Error(`No conversion command found for format "${name}".`),
-      );
-    }
-
-    ffmpeg.on("log", (e) => {
-      LogMessage(e.message);
-    });
-
-    try {
-      const fileData = await fetchFile(file);
-
-      await ffmpeg.writeFile(filePath, fileData);
-
-      const options: CommandOptions = {
-        input: filePath,
-        output: convertedFilePath,
-      };
-
-      const cmds = precmds.replace(
-        /%(\w+)%/g,
-        (match, key: keyof CommandOptions) => {
-          return options[key] || match;
-        },
-      );
-
-      const firstFrameCommand = [
-        "-i",
-        filePath,
-        "-ss",
-        "00:00:00.000",
-        "-vframes",
-        "1",
-        firstFramePath,
-      ];
-
-      if (extractFirstFrame) {
-        const [convertedFile, firstFrame] = await Promise.all([
-          (async () => {
-            await ffmpeg.exec(cmds.split(/ /));
-            const convertedBlob = await ffmpeg.readFile(convertedFilePath);
-            return new Blob([convertedBlob], { type: mimeType });
-          })(),
-          (async () => {
-            await ffmpeg.exec(firstFrameCommand);
-            const previewImageBlob = await ffmpeg.readFile(firstFramePath);
-            return new Blob([previewImageBlob], { type: mimeType });
-          })(),
-        ]);
-
-        const result: ConvertedFile = {
-          converted: {
-            file: new File([convertedFile], convertedFileName, {
-              type: mimeType,
-            }),
-            fileFormat: targetForamt,
-          },
-          firstFrame: {
-            file: new File([firstFrame], ""),
-            fileFormat: firstFrameFormat,
-          },
-        };
-        resolve(result);
-      } else {
-        await ffmpeg.exec(cmds.split(/ /));
-        const convertedBlob = await ffmpeg.readFile(convertedFilePath);
-        const convertedFile = new Blob([convertedBlob], { type: mimeType });
-
-        resolve({
-          converted: {
-            file: new File([convertedFile], convertedFileName, {
-              type: mimeType,
-            }),
-            fileFormat: targetForamt,
-          },
+    (async () => {
+      try {
+        await ffmpeg.load(config, {
+          signal: abortController.signal,
         });
+      } catch (err) {
+        return reject(
+          new Error(
+            `Failed to load FFmpeg: ${err instanceof Error ? err.message : String(err)}`,
+          ),
+        );
       }
-    } catch (err) {
-      console.error("Error during conversion:", err);
-      reject(
-        new Error(
-          `Conversion failed: ${err instanceof Error ? err.message : String(err)}`,
-        ),
+
+      const filePath = `dynamic_convert\\${file.name}`.replace(/ +/g, "_");
+      const convertedFileName = file.name.replace(
+        /\.[^/.]+$/,
+        fileExtension[0],
       );
-    } finally {
-      ffmpeg.terminate();
-    }
+      const convertedFilePath = `dynamic_convert\\${convertedFileName}`.replace(
+        / +/g,
+        "_",
+      );
+      const firstFrameFormat = FORMATS.PNG;
+      const firstFramePath = `preview_${filePath.replace(/\.[^/.]+$/, `.${firstFrameFormat.fileExtension[0]}`)}`;
+
+      const precmds = formatCommands[name];
+
+      if (!precmds) {
+        return reject(
+          new Error(`No conversion command found for format "${name}".`),
+        );
+      }
+
+      ffmpeg.on("log", (e) => {
+        LogMessage(e.message);
+      });
+
+      try {
+        const fileData = await fetchFile(file);
+
+        await ffmpeg.writeFile(filePath, fileData);
+
+        const options: CommandOptions = {
+          input: filePath,
+          output: convertedFilePath,
+        };
+
+        const cmds = precmds.replace(
+          /%(\w+)%/g,
+          (match, key: keyof CommandOptions) => {
+            return options[key] || match;
+          },
+        );
+
+        const firstFrameCommand = [
+          "-i",
+          filePath,
+          "-ss",
+          "00:00:00.000",
+          "-vframes",
+          "1",
+          firstFramePath,
+        ];
+
+        if (extractFirstFrame) {
+          const [convertedFile, firstFrame] = await Promise.all([
+            (async () => {
+              await ffmpeg.exec(cmds.split(/ /));
+              const convertedBlob = await ffmpeg.readFile(convertedFilePath);
+              return new Blob([convertedBlob], { type: mimeType });
+            })(),
+            (async () => {
+              await ffmpeg.exec(firstFrameCommand);
+              const previewImageBlob = await ffmpeg.readFile(firstFramePath);
+              return new Blob([previewImageBlob], { type: mimeType });
+            })(),
+          ]);
+
+          const result: ConvertedFile = {
+            converted: {
+              file: new File([convertedFile], convertedFileName, {
+                type: mimeType,
+              }),
+              fileFormat: targetForamt,
+            },
+            firstFrame: {
+              file: new File([firstFrame], ""),
+              fileFormat: firstFrameFormat,
+            },
+          };
+          resolve(result);
+        } else {
+          await ffmpeg.exec(cmds.split(/ /));
+          const convertedBlob = await ffmpeg.readFile(convertedFilePath);
+          const convertedFile = new Blob([convertedBlob], { type: mimeType });
+
+          resolve({
+            converted: {
+              file: new File([convertedFile], convertedFileName, {
+                type: mimeType,
+              }),
+              fileFormat: targetForamt,
+            },
+          });
+        }
+      } catch (err) {
+        console.error("Error during conversion:", err);
+        reject(
+          new Error(
+            `Conversion failed: ${err instanceof Error ? err.message : String(err)}`,
+          ),
+        );
+      } finally {
+        ffmpeg.terminate();
+      }
+    })();
   });
 }
 
@@ -300,72 +307,74 @@ async function ExtractFirstFrameFromAnimation(
   firstFrameFile: File;
   firstFrameFileFormat: FileFormat;
 }> {
-  return new Promise(async (resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const ffmpeg = new FFmpeg();
 
     abortController.signal.onabort = () => {
       reject(new Error("Frame extraction aborted by user."));
     };
 
-    try {
-      await ffmpeg.load(config, {
-        signal: abortController.signal,
-      });
-    } catch (err) {
-      return reject(
-        new Error(
-          `Failed to load FFmpeg: ${err instanceof Error ? err.message : String(err)}`,
-        ),
+    (async () => {
+      try {
+        await ffmpeg.load(config, {
+          signal: abortController.signal,
+        });
+      } catch (err) {
+        return reject(
+          new Error(
+            `Failed to load FFmpeg: ${err instanceof Error ? err.message : String(err)}`,
+          ),
+        );
+      }
+
+      const targetFormat = FORMATS.PNG;
+
+      const inputPath = `extract_frame\\${file.name}`.replace(/ +/g, "_");
+      const outputPath = `preview_${inputPath.replace(/\.[^/.]+$/, `.${targetFormat.fileExtension[0]}`)}`;
+      const outputFileName = file.name.replace(
+        /\.[^/.]+$/,
+        `.${targetFormat.fileExtension[0]}`,
       );
-    }
 
-    const targetFormat = FORMATS.PNG;
-
-    const inputPath = `extract_frame\\${file.name}`.replace(/ +/g, "_");
-    const outputPath = `preview_${inputPath.replace(/\.[^/.]+$/, `.${targetFormat.fileExtension[0]}`)}`;
-    const outputFileName = file.name.replace(
-      /\.[^/.]+$/,
-      `.${targetFormat.fileExtension[0]}`,
-    );
-
-    ffmpeg.on("log", (e) => {
-      LogMessage(e.message);
-    });
-
-    try {
-      const fileData = await fetchFile(file);
-      await ffmpeg.writeFile(inputPath, fileData);
-
-      const command = [
-        "-i",
-        inputPath,
-        "-ss",
-        "00:00:00",
-        "-vframes",
-        "1",
-        outputPath,
-      ];
-
-      await ffmpeg.exec(command);
-
-      const firstFrameFile = await ffmpeg.readFile(outputPath);
-
-      resolve({
-        firstFrameFile: new File([firstFrameFile], outputFileName, {
-          type: targetFormat.mimeType,
-        }),
-        firstFrameFileFormat: targetFormat,
+      ffmpeg.on("log", (e) => {
+        LogMessage(e.message);
       });
-    } catch (err) {
-      console.error("Error during frame extraction:", err);
-      reject(
-        new Error(
-          `Frame extraction failed: ${err instanceof Error ? err.message : String(err)}`,
-        ),
-      );
-    } finally {
-      ffmpeg.terminate();
-    }
+
+      try {
+        const fileData = await fetchFile(file);
+        await ffmpeg.writeFile(inputPath, fileData);
+
+        const command = [
+          "-i",
+          inputPath,
+          "-ss",
+          "00:00:00",
+          "-vframes",
+          "1",
+          outputPath,
+        ];
+
+        await ffmpeg.exec(command);
+
+        const firstFrameFile = await ffmpeg.readFile(outputPath);
+
+        resolve({
+          firstFrameFile: new File([firstFrameFile], outputFileName, {
+            type: targetFormat.mimeType,
+          }),
+          firstFrameFileFormat: targetFormat,
+        });
+      } catch (err) {
+        console.error("Error during frame extraction:", err);
+        reject(
+          new Error(
+            `Frame extraction failed: ${err instanceof Error ? err.message : String(err)}`,
+          ),
+        );
+      } finally {
+        ffmpeg.terminate();
+      }
+    })();
   });
 }
 
