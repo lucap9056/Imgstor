@@ -38,83 +38,23 @@ const MainViewer: React.FC = () => {
   const alerts = useAlerts();
   const imgstor = useImgstor();
   const { imageId } = useParams();
-
-  if (!imageId) {
-    return <></>;
-  }
-
-  const [image, SetImage] = useState<ImgstorImage>(
-    imgstor.db.SearchImages({
-      filters: { imageId },
-      limit: 1,
-    })[0],
-  );
-
-  if (!image) {
-    return <></>;
-  }
-
   const navigate = useNavigate();
   const { t } = useTranslation();
+
+  const [image, SetImage] = useState<ImgstorImage | undefined>(() =>
+    imageId
+      ? imgstor.db.SearchImages({
+          filters: { imageId },
+          limit: 1,
+        })[0]
+      : undefined,
+  );
+
   const transcodeLogs = new TranscodeLogs();
 
   const hostingService: ImageHostingService | undefined = image
     ? imgstor.availableHostingServices[image.hostingServiceId]
     : undefined;
-
-  const Delete = async () => {
-    const loading = loader.append();
-
-    const removing = notifications.append(
-      new Message({
-        type: Message.Type.NORMAL,
-        content: t("viewer.notifiaction.deleting"),
-      }),
-    );
-
-    try {
-      const hostingService =
-        imgstor.availableHostingServices[image.hostingServiceId];
-      if (hostingService && hostingService.NAME !== ImportExternal.NAME) {
-        hostingService.Delete(image);
-      }
-
-      if (image.fileId !== "") {
-        await imgstor.removeImage(image);
-      }
-      imgstor.db.DeleteImage(image.imageId);
-
-      await imgstor.db.Save();
-    } catch (err) {
-      alerts.append(
-        new Message({
-          type: Message.Type.ERROR,
-          content: (err as Error).message,
-        }),
-      );
-    } finally {
-      loading.remove();
-      removing.remove();
-    }
-  };
-
-  const HandleDelete = () => {
-    const cancel = new MessageButton(t("main.cancel"));
-
-    const confirm = new MessageButton(t("main.confirm"));
-    confirm.on("Clicked", async () => {
-      await Delete();
-      navigate(RoutePaths.HOME);
-    });
-
-    alerts.append(
-      new Message({
-        type: Message.Type.ALERT,
-        content: t("viewer.alert.delete"),
-        buttons: [cancel, confirm],
-      }),
-    );
-  };
 
   const HandleOpen = useCallback(() => {
     if (!image) return;
@@ -135,7 +75,7 @@ const MainViewer: React.FC = () => {
         content: t("viewer.notification.link-copied"),
       }),
     );
-  }, [image]);
+  }, [image, notifications, t]);
 
   const HandleDownload = useCallback(async () => {
     if (!image) return;
@@ -163,7 +103,7 @@ const MainViewer: React.FC = () => {
       a.target = "_blank";
       a.click();
       URL.revokeObjectURL(a.href);
-    } catch (err) {
+    } catch {
       notifications.append(
         new Message({
           type: Message.Type.ERROR,
@@ -173,12 +113,12 @@ const MainViewer: React.FC = () => {
     }
     loading.remove();
     downloading.remove();
-  }, [image]);
+  }, [image, notifications, t, loader, imgstor]);
 
-  const FileConvert = (file: File): Promise<ImageFile> => {
-    return new Promise(async (resolve, reject) => {
+  const FileConvert = useCallback(
+    async (file: File): Promise<ImageFile> => {
       if (!hostingService) {
-        return reject(new Error());
+        throw new Error();
       }
 
       const fileConverter = imgstor.converter;
@@ -322,7 +262,7 @@ const MainViewer: React.FC = () => {
           transcodeLogs.clear();
         }
 
-        resolve(imageFile);
+        return imageFile;
       } catch (err) {
         LogMessage((err as Error).message);
         Object.keys(messages).forEach((id) => {
@@ -342,10 +282,11 @@ const MainViewer: React.FC = () => {
           }),
         );
 
-        reject(err);
+        throw err;
       }
-    });
-  };
+    },
+    [hostingService, imgstor, t, notifications, transcodeLogs],
+  );
 
   const HandleReupload = useCallback(() => {
     if (!image) return;
@@ -412,7 +353,65 @@ const MainViewer: React.FC = () => {
         buttons: [new MessageButton(t("main.cancel")), confirm],
       }),
     );
-  }, [image]);
+  }, [image, hostingService, imgstor, alerts, notifications, t, FileConvert]);
+
+  if (!imageId || !image) {
+    return null;
+  }
+
+  const Delete = async () => {
+    const loading = loader.append();
+
+    const removing = notifications.append(
+      new Message({
+        type: Message.Type.NORMAL,
+        content: t("viewer.notifiaction.deleting"),
+      }),
+    );
+
+    try {
+      const hostingService =
+        imgstor.availableHostingServices[image.hostingServiceId];
+      if (hostingService && hostingService.NAME !== ImportExternal.NAME) {
+        hostingService.Delete(image);
+      }
+
+      if (image.fileId !== "") {
+        await imgstor.removeImage(image);
+      }
+      imgstor.db.DeleteImage(image.imageId);
+
+      await imgstor.db.Save();
+    } catch (err) {
+      alerts.append(
+        new Message({
+          type: Message.Type.ERROR,
+          content: (err as Error).message,
+        }),
+      );
+    } finally {
+      loading.remove();
+      removing.remove();
+    }
+  };
+
+  const HandleDelete = () => {
+    const cancel = new MessageButton(t("main.cancel"));
+
+    const confirm = new MessageButton(t("main.confirm"));
+    confirm.on("Clicked", async () => {
+      await Delete();
+      navigate(RoutePaths.HOME);
+    });
+
+    alerts.append(
+      new Message({
+        type: Message.Type.ALERT,
+        content: t("viewer.alert.delete"),
+        buttons: [cancel, confirm],
+      }),
+    );
+  };
 
   const options: Option[] = [
     {
