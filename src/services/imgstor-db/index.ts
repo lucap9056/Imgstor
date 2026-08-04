@@ -54,12 +54,12 @@ async function LoadDatabase(data: ArrayBuffer): Promise<Database> {
   });
 
   const bytes = new Uint8Array(data);
-  const dbBytes = IsRawSqliteBytes(bytes)
-    ? bytes
-    : Base64ToUint8Array(new TextDecoder().decode(bytes));
 
   let db: Database;
   try {
+    const dbBytes = IsRawSqliteBytes(bytes)
+      ? bytes
+      : Base64ToUint8Array(new TextDecoder().decode(bytes));
     db = new sql.Database(dbBytes);
   } catch {
     return NewDatabase();
@@ -173,15 +173,36 @@ export default class ImgstorDB extends EventDispatcher<ImgstorDBEventDefinitions
     return decodeURI(decodedStr);
   }
 
+  private static readonly AUTO_SAVE_DEBOUNCE_MS = 3000;
+
   private db: Database;
   private drive: Drive;
   private dataFile: ImgstorData;
   private changed: boolean = false;
+  private savePromise: Promise<ImgstorData> | null = null;
+  private autoSaveTimeoutId?: ReturnType<typeof setTimeout>;
   constructor(db: Database, drive: Drive, dataFile: ImgstorData) {
     super();
     this.db = db;
     this.drive = drive;
     this.dataFile = dataFile;
+  }
+
+  private MarkChanged(): void {
+    this.changed = true;
+
+    if (this.autoSaveTimeoutId) {
+      clearTimeout(this.autoSaveTimeoutId);
+    }
+
+    this.autoSaveTimeoutId = setTimeout(() => {
+      this.Save().catch((error) => {
+        this.emit("ErrorOccurred", {
+          message: "Auto-save failed",
+          error: error as Error,
+        });
+      });
+    }, ImgstorDB.AUTO_SAVE_DEBOUNCE_MS);
   }
 
   public GetHostingServices(
@@ -192,13 +213,13 @@ export default class ImgstorDB extends EventDispatcher<ImgstorDBEventDefinitions
 
   public InsertHostingService(name: string): string {
     HostingService.Insert(this.db, name);
-    this.changed = true;
+    this.MarkChanged();
     return this.lastInsertRowid;
   }
 
   public DeleteHostingService(id: string): void {
     HostingService.Delete(this.db, id);
-    this.changed = true;
+    this.MarkChanged();
   }
 
   public GetTags(...include: (keyof ImgstorTag)[]): ImgstorTag[] {
@@ -207,13 +228,13 @@ export default class ImgstorDB extends EventDispatcher<ImgstorDBEventDefinitions
 
   public InsertTag(name: string): string {
     Tag.Insert(this.db, name);
-    this.changed = true;
+    this.MarkChanged();
     return this.lastInsertRowid;
   }
 
   public DeleteTag(id: string): void {
     Tag.Delete(this.db, id);
-    this.changed = true;
+    this.MarkChanged();
   }
 
   public GetImages(...include: (keyof ImgstorImage)[]) {
@@ -222,7 +243,7 @@ export default class ImgstorDB extends EventDispatcher<ImgstorDBEventDefinitions
 
   public InsertImage(image: ImgstorImage): string {
     Image.Insert(this.db, image);
-    this.changed = true;
+    this.MarkChanged();
     this.emit("ImageUpdated", image);
     return this.lastInsertRowid;
   }
@@ -230,13 +251,13 @@ export default class ImgstorDB extends EventDispatcher<ImgstorDBEventDefinitions
   public UpdateImage(image: ImgstorImage): void {
     Image.Update(this.db, image);
     this.emit("ImageUpdated", image);
-    this.changed = true;
+    this.MarkChanged();
   }
 
   public DeleteImage(imageId: string): void {
     Image.Delete(this.db, imageId);
     this.emit("ImageUpdated", { ...ImgstorImage.Empty(), imageId });
-    this.changed = true;
+    this.MarkChanged();
   }
 
   public GetImageTags(
@@ -248,7 +269,7 @@ export default class ImgstorDB extends EventDispatcher<ImgstorDBEventDefinitions
 
   public InsertImageTag(image_id: string, tag_id: string): string {
     ImageTag.Insert(this.db, image_id, tag_id);
-    this.changed = true;
+    this.MarkChanged();
     return this.lastInsertRowid;
   }
 
@@ -258,7 +279,7 @@ export default class ImgstorDB extends EventDispatcher<ImgstorDBEventDefinitions
    */
   public DeleteImageTag(imageID_or_imageTagID: string, tagID?: string): void {
     ImageTag.Delete(this.db, imageID_or_imageTagID, tagID);
-    this.changed = true;
+    this.MarkChanged();
   }
 
   public SearchImages(args: SearchImagesArgs = {}): ImgstorImage[] {
@@ -269,7 +290,22 @@ export default class ImgstorDB extends EventDispatcher<ImgstorDBEventDefinitions
     return this.changed;
   }
 
-  public async Save(): Promise<ImgstorData> {
+  public Save(): Promise<ImgstorData> {
+    if (!this.savePromise) {
+      this.savePromise = this.SaveNow().finally(() => {
+        this.savePromise = null;
+      });
+    }
+
+    return this.savePromise;
+  }
+
+  private async SaveNow(): Promise<ImgstorData> {
+    if (this.autoSaveTimeoutId) {
+      clearTimeout(this.autoSaveTimeoutId);
+      this.autoSaveTimeoutId = undefined;
+    }
+
     const { drive, db, dataFile } = this;
 
     const dataBytes = db.export();
