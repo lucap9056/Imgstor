@@ -1,62 +1,77 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import type React from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
-import MessageManager, { Message, MessageManagerEvent } from "structs/message";
+import MessageManager, {
+  type Message,
+  type MessageManagerEvent,
+} from "structs/message";
 
 import styles from "./style.module.scss";
 
-
 const AlertsContext = createContext<MessageManager | null>(null);
 
-export const AlertsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const imgstorAlerts = new MessageManager();
-    return <AlertsContext.Provider value={imgstorAlerts}>{children}</AlertsContext.Provider>;
+export const AlertsProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const imgstorAlerts = new MessageManager();
+  return (
+    <AlertsContext.Provider value={imgstorAlerts}>
+      {children}
+    </AlertsContext.Provider>
+  );
 };
 
 export const useAlerts = (): MessageManager => {
-    const context = useContext(AlertsContext);
-    if (!context) {
-        throw new Error("useAlerts must be used within an AlertsProvider.");
-    }
-    return context;
+  const context = useContext(AlertsContext);
+  if (!context) {
+    throw new Error("useAlerts must be used within an AlertsProvider.");
+  }
+  return context;
 };
 
 const Alerts: React.FC = () => {
-    const alerts = useAlerts();
-    const [alert, setAlert] = useState<Message>();
+  const alerts = useAlerts();
+  const [alert, setAlert] = useState<Message>();
 
-    useEffect(() => {
-        const AlertsChangedHandler = (e: MessageManagerEvent<"MessagesChanged">) => {
-            if (e.detail.length === 0) {
-                setAlert(undefined);
-            }
-            else {
-                setAlert(e.detail[0]);
-            }
-        }
+  useEffect(() => {
+    const AlertsChangedHandler = (
+      e: MessageManagerEvent<"MessagesChanged">,
+    ) => {
+      if (e.detail.length === 0) {
+        setAlert(undefined);
+      } else {
+        setAlert(e.detail[0]);
+      }
+    };
 
-        alerts.on("MessagesChanged", AlertsChangedHandler);
-        return () => {
-            alerts.off("MessagesChanged", AlertsChangedHandler);
-        }
-    }, []);
+    alerts.on("MessagesChanged", AlertsChangedHandler);
+    return () => {
+      alerts.off("MessagesChanged", AlertsChangedHandler);
+    };
+  }, []);
 
-    if (!alert) return <></>;
+  if (!alert) return <></>;
 
-    return <Alert key={alert.id} content={alert} />;
-}
+  return <Alert key={alert.id} content={alert} />;
+};
 
 export default Alerts;
 
 const Alert: React.FC<{ content: Message }> = ({ content }) => {
-    return <div className={styles.container}>
-        <div className={styles.alert} data-type={content.type}>
-            <div className={styles.message}>{content.content}</div>
-            {content.buttons.map(
-                (button, i) => <button key={content.id + i} className={styles.button}
-                    onClick={button.Click}>
-                    {button.text}
-                </button>
-            )}
-        </div>
+  return (
+    <div className={styles.container}>
+      <div className={styles.alert} data-type={content.type}>
+        <div className={styles.message}>{content.content}</div>
+        {content.buttons.map((button, i) => (
+          <button
+            key={content.id + i}
+            className={styles.button}
+            onClick={button.Click}
+          >
+            {button.text}
+          </button>
+        ))}
+      </div>
     </div>
-}
+  );
+};

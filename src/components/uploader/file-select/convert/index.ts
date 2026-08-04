@@ -1,11 +1,14 @@
-import { Message, MessageButton } from "structs/message";
+import AnimationImageConvert from "components/uploader/file-select/convert/animation-convert";
+import DetectAnimation from "components/uploader/file-select/convert/animation-detect";
+import type {
+  ConvertedFile,
+  FileConvertContext,
+  FileSelectContext,
+} from "components/uploader/file-select/convert/ctx";
+import StaticImageConvert from "components/uploader/file-select/convert/static-convert";
 import ImageConverter from "services/converter";
 import { ImageFile } from "services/image-hosting-services";
-import { FileSelectContext, FileConvertContext, ConvertedFile } from "components/uploader/file-select/convert/ctx";
-
-import DetectAnimation from "components/uploader/file-select/convert/animation-detect";
-import AnimationImageConvert from "components/uploader/file-select/convert/animation-convert";
-import StaticImageConvert from "components/uploader/file-select/convert/static-convert";
+import { Message, MessageButton } from "structs/message";
 
 /**
  * Handles the selection and processing of an image file. It infers the file format,
@@ -17,60 +20,61 @@ import StaticImageConvert from "components/uploader/file-select/convert/static-c
  * for file selection and processing.
  * @returns {Promise<ConvertedFile>}
  */
-export default async function (context: FileSelectContext): Promise<ConvertedFile> {
-    const {
-        translation,
-        notifications,
-        transcodeLogs,
-        file,
-    } = context;
+export default async function (
+  context: FileSelectContext,
+): Promise<ConvertedFile> {
+  const { translation, notifications, transcodeLogs, file } = context;
 
-    const { t } = translation;
+  const { t } = translation;
 
-    const LogMessage = (message: string) => transcodeLogs.println(message);
+  const LogMessage = (message: string) => transcodeLogs.println(message);
 
-    const sourceFormat = ImageConverter.InferFileFormat(file);
+  const sourceFormat = ImageConverter.InferFileFormat(file);
 
-    if (!sourceFormat) {
-        const errorMessage = t("uploader.file.format.not-supported");
-        LogMessage(errorMessage);
-        const confirmButton = new MessageButton(t("main.confirm"));
-        notifications.append(
-            new Message({
-                type: Message.Type.ALERT,
-                content: errorMessage,
-                buttons: [confirmButton],
-            })
-        );
+  if (!sourceFormat) {
+    const errorMessage = t("uploader.file.format.not-supported");
+    LogMessage(errorMessage);
+    const confirmButton = new MessageButton(t("main.confirm"));
+    notifications.append(
+      new Message({
+        type: Message.Type.ALERT,
+        content: errorMessage,
+        buttons: [confirmButton],
+      }),
+    );
 
-        throw new Error(errorMessage);
-    }
+    throw new Error(errorMessage);
+  }
 
-    console.log(sourceFormat);
+  console.log(sourceFormat);
 
-    const isAnimation = await DetectAnimation(context);
-    const imageFile = new ImageFile(file, sourceFormat);
-    const convertContext: FileConvertContext = { ...context, imageFile, sourceFormat };
+  const isAnimation = await DetectAnimation(context);
+  const imageFile = new ImageFile(file, sourceFormat);
+  const convertContext: FileConvertContext = {
+    ...context,
+    imageFile,
+    sourceFormat,
+  };
 
-    console.log("isAnimation: ", isAnimation);
-    if (isAnimation) {
-        await AnimationImageConvert(convertContext);
-    } else {
-        await StaticImageConvert(convertContext);
-    }
+  console.log("isAnimation: ", isAnimation);
+  if (isAnimation) {
+    await AnimationImageConvert(convertContext);
+  } else {
+    await StaticImageConvert(convertContext);
+  }
 
-    const convertedFile: ConvertedFile = {
-        imageFile,
-        isAnimation,
-    };
+  const convertedFile: ConvertedFile = {
+    imageFile,
+    isAnimation,
+  };
 
-    const fileSizeChanged = ShowFileSizeChangedNotification(convertContext);
+  const fileSizeChanged = ShowFileSizeChangedNotification(convertContext);
 
-    if (!fileSizeChanged && transcodeLogs.visibled) {
-        transcodeLogs.clear();
-    }
+  if (!fileSizeChanged && transcodeLogs.visibled) {
+    transcodeLogs.clear();
+  }
 
-    return convertedFile;
+  return convertedFile;
 }
 
 /**
@@ -79,37 +83,35 @@ export default async function (context: FileSelectContext): Promise<ConvertedFil
  * @returns {boolean} - True if a file size changed notification was displayed, false otherwise.
  */
 function ShowFileSizeChangedNotification(context: FileConvertContext): boolean {
-    const {
-        imageFile,
-        transcodeLogs,
-        translation,
-        notifications,
-    } = context;
+  const { imageFile, transcodeLogs, translation, notifications } = context;
 
-    const { t } = translation;
+  const { t } = translation;
 
-    if (imageFile.processed) {
-        const originalSize = FormatFileSize(imageFile.original.file.size);
-        const processedSize = FormatFileSize(imageFile.processed.file.size);
+  if (imageFile.processed) {
+    const originalSize = FormatFileSize(imageFile.original.file.size);
+    const processedSize = FormatFileSize(imageFile.processed.file.size);
 
-        if (originalSize !== processedSize) {
-            const confirmButton = new MessageButton(t("main.confirm"));
-            confirmButton.on("Clicked", () => {
-                transcodeLogs.clear();
-            });
+    if (originalSize !== processedSize) {
+      const confirmButton = new MessageButton(t("main.confirm"));
+      confirmButton.on("Clicked", () => {
+        transcodeLogs.clear();
+      });
 
-            const sizeChangedMessage = new Message({
-                type: Message.Type.ALERT,
-                content: t("uploader.file.notification.converted-size", { originalSize, processedSize }),
-                buttons: [confirmButton]
-            });
+      const sizeChangedMessage = new Message({
+        type: Message.Type.ALERT,
+        content: t("uploader.file.notification.converted-size", {
+          originalSize,
+          processedSize,
+        }),
+        buttons: [confirmButton],
+      });
 
-            notifications.append(sizeChangedMessage);
-            return true;
-        }
+      notifications.append(sizeChangedMessage);
+      return true;
     }
+  }
 
-    return false;
+  return false;
 }
 
 /**
@@ -120,16 +122,16 @@ function ShowFileSizeChangedNotification(context: FileConvertContext): boolean {
  * @throws {Error} If the file size is negative.
  */
 function FormatFileSize(bytes: number, decimals: number = 2): string {
-    if (bytes < 0) {
-        throw new Error("File size cannot be negative.");
-    }
+  if (bytes < 0) {
+    throw new Error("File size cannot be negative.");
+  }
 
-    const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
-    if (bytes === 0) return `0 ${sizes[0]}`;
+  const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+  if (bytes === 0) return `0 ${sizes[0]}`;
 
-    const k = 1024;
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    const formattedSize = parseFloat((bytes / Math.pow(k, i)).toFixed(decimals));
+  const k = 1024;
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  const formattedSize = parseFloat((bytes / k ** i).toFixed(decimals));
 
-    return `${formattedSize} ${sizes[i]}`;
+  return `${formattedSize} ${sizes[i]}`;
 }

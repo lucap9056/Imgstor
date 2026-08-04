@@ -1,6 +1,11 @@
-import { FileFormat, FormatNames, FORMATS, LogPrinter } from "services/converter/file-formats";
 import ImageCanvasConverter from "services/converter/canvas-converter";
-import FFmpegService, { ConvertedFile } from "services/converter/ffmpeg";
+import FFmpegService, { type ConvertedFile } from "services/converter/ffmpeg";
+import {
+  type FileFormat,
+  FORMATS,
+  type FormatNames,
+  type LogPrinter,
+} from "services/converter/file-formats";
 import Imgproc from "services/converter/imgproc";
 
 const STATIC_IMAGE_FORMATS: FormatNames[] = [
@@ -16,7 +21,7 @@ const STATIC_IMAGE_FORMATS: FormatNames[] = [
   "XPM",
   "ICO",
   "AVIF",
-  "PSD"
+  "PSD",
 ];
 
 const ANIMATED_IMAGE_FORMATS: FormatNames[] = [
@@ -29,7 +34,7 @@ const ANIMATED_IMAGE_FORMATS: FormatNames[] = [
   "WMV",
   "MPEG",
   "3GP",
-  "OGG"
+  "OGG",
 ];
 
 export default class FileConverter {
@@ -56,7 +61,9 @@ export default class FileConverter {
         }
       }
     }
-    console.error(`Error: Could not determine the file format for "${file.name}".`);
+    console.error(
+      `Error: Could not determine the file format for "${file.name}".`,
+    );
     return undefined;
   }
 
@@ -80,7 +87,9 @@ export default class FileConverter {
 
     const kilobyte = 1024;
     const exponent = Math.floor(Math.log(bytes) / Math.log(kilobyte));
-    const formattedSize = parseFloat((bytes / Math.pow(kilobyte, exponent)).toFixed(decimals));
+    const formattedSize = parseFloat(
+      (bytes / kilobyte ** exponent).toFixed(decimals),
+    );
 
     return `${formattedSize} ${sizeUnits[exponent]}`;
   }
@@ -94,11 +103,17 @@ export default class FileConverter {
    * @returns A promise that resolves to true if the file is animated, and false otherwise.
    * @throws Error if the source file format cannot be identified or if animation detection fails.
    */
-  public async DetectAnimation(abortController: AbortController, file: File, logMessage: LogPrinter): Promise<boolean> {
+  public async DetectAnimation(
+    abortController: AbortController,
+    file: File,
+    logMessage: LogPrinter,
+  ): Promise<boolean> {
     const sourceFormat = FileConverter.InferFileFormat(file);
 
     if (!sourceFormat) {
-      throw new Error("Error: Failed to identify the source file format. Please ensure the file is valid and has a recognizable extension.");
+      throw new Error(
+        "Error: Failed to identify the source file format. Please ensure the file is valid and has a recognizable extension.",
+      );
     }
 
     if (STATIC_IMAGE_FORMATS.includes(sourceFormat.name)) {
@@ -112,15 +127,22 @@ export default class FileConverter {
     if (Imgproc.IsSupportedDetectAnimation(sourceFormat)) {
       try {
         const imgproc = new Imgproc(abortController, logMessage);
-        const { isAnimation } = await imgproc.DetectAnimation(file, sourceFormat);
+        const { isAnimation } = await imgproc.DetectAnimation(
+          file,
+          sourceFormat,
+        );
         return isAnimation;
       } catch (error) {
         console.error("Error during animation detection:", error);
-        throw new Error("Error: Failed to detect animation. Please try again with a different file or check the console for details.");
+        throw new Error(
+          "Error: Failed to detect animation. Please try again with a different file or check the console for details.",
+        );
       }
     }
 
-    throw new Error(`Error: Unable to determine animation status for format "${sourceFormat.name}". This format might not be supported for animation detection.`);
+    throw new Error(
+      `Error: Unable to determine animation status for format "${sourceFormat.name}". This format might not be supported for animation detection.`,
+    );
   }
 
   /**
@@ -133,19 +155,31 @@ export default class FileConverter {
    * @returns A promise that resolves to the converted File object.
    * @throws Error if the source file format cannot be identified or if the conversion process fails.
    */
-  public async ConvertStaticImage(abortController: AbortController, file: File, targetFormat: FileFormat, logMessage: LogPrinter): Promise<File> {
+  public async ConvertStaticImage(
+    abortController: AbortController,
+    file: File,
+    targetFormat: FileFormat,
+    logMessage: LogPrinter,
+  ): Promise<File> {
     const sourceFormat = FileConverter.InferFileFormat(file);
 
     if (!sourceFormat) {
-      throw new Error("Error: Failed to identify the source file format. Please ensure the file is valid and has a recognizable extension.");
+      throw new Error(
+        "Error: Failed to identify the source file format. Please ensure the file is valid and has a recognizable extension.",
+      );
     }
 
     if (ImageCanvasConverter.IsSupported(sourceFormat, targetFormat)) {
       try {
         return await ImageCanvasConverter.ConvertImage(file, targetFormat);
       } catch (error) {
-        console.error(`Error during canvas conversion to "${targetFormat.name}":`, error);
-        throw new Error(`Error: Failed to convert image using canvas to "${targetFormat.name}". Please try again.`);
+        console.error(
+          `Error during canvas conversion to "${targetFormat.name}":`,
+          error,
+        );
+        throw new Error(
+          `Error: Failed to convert image using canvas to "${targetFormat.name}". Please try again.`,
+        );
       }
     }
 
@@ -153,29 +187,50 @@ export default class FileConverter {
       try {
         const imgproc = new Imgproc(abortController, logMessage);
 
-        const { decodedFile } = await imgproc.DecodeStaticImage(file, sourceFormat);
-        if (targetFormat.name === FORMATS["PNG"].name) {
+        const { decodedFile } = await imgproc.DecodeStaticImage(
+          file,
+          sourceFormat,
+        );
+        if (targetFormat.name === FORMATS.PNG.name) {
           return decodedFile;
         } else {
           file = decodedFile;
         }
       } catch (error) {
         console.error("Error during extended static conversion:", error);
-        throw new Error(`Error: Failed to perform intermediate conversion for "${sourceFormat.name}". Please try again.`);
+        throw new Error(
+          `Error: Failed to perform intermediate conversion for "${sourceFormat.name}". Please try again.`,
+        );
       }
     }
 
     if (!FFmpegService.SUPPORTED_STATIC_FORMATS.includes(targetFormat.name)) {
-      throw new Error(`Error: The target format "${targetFormat.name}" is not supported for static image conversion. Please choose a different format.`);
+      throw new Error(
+        `Error: The target format "${targetFormat.name}" is not supported for static image conversion. Please choose a different format.`,
+      );
     }
 
     try {
-      const blob = await FFmpegService.ConvertStatic(abortController, file, targetFormat, logMessage);
+      const blob = await FFmpegService.ConvertStatic(
+        abortController,
+        file,
+        targetFormat,
+        logMessage,
+      );
       const { mimeType, fileExtension } = targetFormat;
-      return new File([blob], file.name.replace(/\.[^/.]+$/, `.${fileExtension[0]}`), { type: mimeType });
+      return new File(
+        [blob],
+        file.name.replace(/\.[^/.]+$/, `.${fileExtension[0]}`),
+        { type: mimeType },
+      );
     } catch (error) {
-      console.error(`Error during FFmpeg static conversion to "${targetFormat.name}":`, error);
-      throw new Error(`Error: Failed to convert image to "${targetFormat.name}". Please check the logs for more details.`);
+      console.error(
+        `Error during FFmpeg static conversion to "${targetFormat.name}":`,
+        error,
+      );
+      throw new Error(
+        `Error: Failed to convert image to "${targetFormat.name}". Please check the logs for more details.`,
+      );
     }
   }
 
@@ -190,20 +245,30 @@ export default class FileConverter {
    * @returns A promise that resolves to the preprocessed ConvertedFile object, or undefined if no preprocessing is needed.
    * @throws Error if the target format is not supported for animation conversion.
    */
-  public async PreprocessAnimation(abortController: AbortController, file: File, sourceFormat: FileFormat, targetFormat: FileFormat, logMessage: LogPrinter): Promise<ConvertedFile | undefined> {
+  public async PreprocessAnimation(
+    abortController: AbortController,
+    file: File,
+    sourceFormat: FileFormat,
+    targetFormat: FileFormat,
+    logMessage: LogPrinter,
+  ): Promise<ConvertedFile | undefined> {
     if (Imgproc.IsSupportedConvertAnimatedImage(sourceFormat, targetFormat)) {
       return undefined;
     }
 
-    if (!FFmpegService.SUPPORTED_ANIMATION_FORMATS.includes(targetFormat.name)) {
-      throw new Error(`Error: The target format "${targetFormat.name}" is not supported for animation content conversion. Please choose a different format.`);
+    if (
+      !FFmpegService.SUPPORTED_ANIMATION_FORMATS.includes(targetFormat.name)
+    ) {
+      throw new Error(
+        `Error: The target format "${targetFormat.name}" is not supported for animation content conversion. Please choose a different format.`,
+      );
     }
 
     return await FFmpegService.PreprocessAnimation(
       abortController,
       file,
       sourceFormat,
-      logMessage
+      logMessage,
     );
   }
 
@@ -219,37 +284,66 @@ export default class FileConverter {
    * @returns A promise that resolves to an object containing the converted file and optionally the first frame.
    * @throws Error if the target format is not supported or if the conversion fails.
    */
-  public async ConvertAnimatedImage(abortController: AbortController, file: File, sourceFormat: FileFormat, targetFormat: FileFormat, extractFirstFrame: boolean, logMessage: LogPrinter):
-    Promise<{
-      converted: {
-        file: File;
-        fileFormat: FileFormat;
-      };
-      firstFrame?: {
-        file: File;
-        fileFormat: FileFormat;
-      };
-    }> {
-
+  public async ConvertAnimatedImage(
+    abortController: AbortController,
+    file: File,
+    sourceFormat: FileFormat,
+    targetFormat: FileFormat,
+    extractFirstFrame: boolean,
+    logMessage: LogPrinter,
+  ): Promise<{
+    converted: {
+      file: File;
+      fileFormat: FileFormat;
+    };
+    firstFrame?: {
+      file: File;
+      fileFormat: FileFormat;
+    };
+  }> {
     if (Imgproc.IsSupportedConvertAnimatedImage(sourceFormat, targetFormat)) {
       try {
         const imgproc = new Imgproc(abortController, logMessage);
-        return await imgproc.ConvertAnimatedImage(file, sourceFormat, targetFormat);
+        return await imgproc.ConvertAnimatedImage(
+          file,
+          sourceFormat,
+          targetFormat,
+        );
       } catch (error) {
-        console.error(`Error during animated image conversion from "${sourceFormat.name}" to "${targetFormat.name}":`, error);
-        throw new Error(`Error: Failed to convert animated image from "${sourceFormat.name}" to "${targetFormat.name}". Please try again.`);
+        console.error(
+          `Error during animated image conversion from "${sourceFormat.name}" to "${targetFormat.name}":`,
+          error,
+        );
+        throw new Error(
+          `Error: Failed to convert animated image from "${sourceFormat.name}" to "${targetFormat.name}". Please try again.`,
+        );
       }
     }
 
-    if (!FFmpegService.SUPPORTED_ANIMATION_FORMATS.includes(targetFormat.name)) {
-      throw new Error(`Error: The target format "${targetFormat.name}" is not supported for animation content conversion. Please choose a different format.`);
+    if (
+      !FFmpegService.SUPPORTED_ANIMATION_FORMATS.includes(targetFormat.name)
+    ) {
+      throw new Error(
+        `Error: The target format "${targetFormat.name}" is not supported for animation content conversion. Please choose a different format.`,
+      );
     }
 
     try {
-      return await FFmpegService.ConvertAnimation(abortController, file, targetFormat, extractFirstFrame, logMessage);
+      return await FFmpegService.ConvertAnimation(
+        abortController,
+        file,
+        targetFormat,
+        extractFirstFrame,
+        logMessage,
+      );
     } catch (error) {
-      console.error(`Error during FFmpeg animation conversion to "${targetFormat.name}":`, error);
-      throw new Error(`Error: Failed to convert to "${targetFormat.name}". Please check the logs for more details.`);
+      console.error(
+        `Error during FFmpeg animation conversion to "${targetFormat.name}":`,
+        error,
+      );
+      throw new Error(
+        `Error: Failed to convert to "${targetFormat.name}". Please check the logs for more details.`,
+      );
     }
   }
 
@@ -263,13 +357,23 @@ export default class FileConverter {
    * @returns A promise that resolves to a File object representing the PNG preview.
    * @throws Error if the preview generation fails.
    */
-  public async GenerateStaticImagePreview(abortController: AbortController, file: File, format: FileFormat, logMessage: LogPrinter): Promise<File> {
-    if (format.name === FORMATS["PNG"].name) {
+  public async GenerateStaticImagePreview(
+    abortController: AbortController,
+    file: File,
+    format: FileFormat,
+    logMessage: LogPrinter,
+  ): Promise<File> {
+    if (format.name === FORMATS.PNG.name) {
       return file;
     }
 
     try {
-      return await this.ConvertStaticImage(abortController, file, FORMATS["PNG"], logMessage);
+      return await this.ConvertStaticImage(
+        abortController,
+        file,
+        FORMATS.PNG,
+        logMessage,
+      );
     } catch (error) {
       console.error("Error during static image preview generation:", error);
       throw new Error("Error: Failed to generate static image preview.");
@@ -286,21 +390,32 @@ export default class FileConverter {
    * @returns A promise that resolves to an object containing the first frame as a File and its format.
    * @throws Error if preview generation is not supported for the given format.
    */
-  public async GenerateAnimatedImagePreview(abortController: AbortController, file: File, sourceFormat: FileFormat, logMessage: LogPrinter):
-    Promise<{
-      firstFrameFile: File;
-      firstFrameFileFormat: FileFormat;
-    }> {
-
+  public async GenerateAnimatedImagePreview(
+    abortController: AbortController,
+    file: File,
+    sourceFormat: FileFormat,
+    logMessage: LogPrinter,
+  ): Promise<{
+    firstFrameFile: File;
+    firstFrameFileFormat: FileFormat;
+  }> {
     if (Imgproc.IsSupportedGetFirstFrame(sourceFormat)) {
       const imgproc = new Imgproc(abortController, logMessage);
       return await imgproc.GetFirstFrame(file, sourceFormat);
     }
 
-    if (!FFmpegService.SUPPORTED_ANIMATION_FORMATS.includes(sourceFormat.name)) {
-      throw new Error(`Error: Preview generation for the format "${sourceFormat.name}" is not supported.`);
+    if (
+      !FFmpegService.SUPPORTED_ANIMATION_FORMATS.includes(sourceFormat.name)
+    ) {
+      throw new Error(
+        `Error: Preview generation for the format "${sourceFormat.name}" is not supported.`,
+      );
     }
 
-    return await FFmpegService.ExtractFirstFrameFromAnimation(abortController, file, logMessage);
+    return await FFmpegService.ExtractFirstFrameFromAnimation(
+      abortController,
+      file,
+      logMessage,
+    );
   }
 }

@@ -1,51 +1,83 @@
-import { FormatNames } from "services/converter/file-formats";
-import { ServiceFeatures, ImageFile } from "services/image-hosting-services";
-import ImgstorDB, { ImgstorImage } from "services/imgstor-db";
-
+import type { FormatNames } from "services/converter/file-formats";
+import type {
+  ImageFile,
+  ServiceFeatures,
+} from "services/image-hosting-services";
+import ImgstorDB, { type ImgstorImage } from "services/imgstor-db";
 
 export default class Catbox {
-    public static readonly NAME = "Catbox";
-    public readonly NAME = Catbox.NAME;
+  public static readonly NAME = "Catbox";
+  public readonly NAME = Catbox.NAME;
 
-    private static readonly UPLOAD_SIZE_LIMIT_BYTES = 200 * Math.pow(1024, 2);//200MB
+  private static readonly UPLOAD_SIZE_LIMIT_BYTES = 200 * 1024 ** 2; //200MB
 
-    public readonly SupportedStaticFormats: FormatNames[] = ["WebP", "PNG", "JPEG", "TIFF", "AVIF", "BMP"];//svg heif heic
-    public readonly SupportedAnimationFormats: FormatNames[] = ["WebP", "GIF", "WEBM", "APNG", "MP4", "MPEG", "MOV", "MKV", "FLV", "AVI", "WMV", "OGG"];
+  public readonly SupportedStaticFormats: FormatNames[] = [
+    "WebP",
+    "PNG",
+    "JPEG",
+    "TIFF",
+    "AVIF",
+    "BMP",
+  ]; //svg heif heic
+  public readonly SupportedAnimationFormats: FormatNames[] = [
+    "WebP",
+    "GIF",
+    "WEBM",
+    "APNG",
+    "MP4",
+    "MPEG",
+    "MOV",
+    "MKV",
+    "FLV",
+    "AVI",
+    "WMV",
+    "OGG",
+  ];
 
-    public readonly hostingServiceId: string;
-    public readonly isEnabled: boolean;
-    public readonly proxy: string;
-    private readonly userhash: string;
-    //private readonly separatePreviewUpload: boolean;
-    public readonly features: ServiceFeatures = {
-        save: true,
-        file: true,
-        tags: true,
-        description: true
-    };
+  public readonly hostingServiceId: string;
+  public readonly isEnabled: boolean;
+  public readonly proxy: string;
+  private readonly userhash: string;
+  //private readonly separatePreviewUpload: boolean;
+  public readonly features: ServiceFeatures = {
+    save: true,
+    file: true,
+    tags: true,
+    description: true,
+  };
 
-    constructor(id: string, isEnabled: boolean, proxy: string, userhash: string, _: boolean) {
-        this.hostingServiceId = id;
-        this.isEnabled = isEnabled;
-        this.proxy = proxy;
-        this.userhash = userhash;
-        //this.separatePreviewUpload = separatePreviewUpload;
+  constructor(
+    id: string,
+    isEnabled: boolean,
+    proxy: string,
+    userhash: string,
+    _: boolean,
+  ) {
+    this.hostingServiceId = id;
+    this.isEnabled = isEnabled;
+    this.proxy = proxy;
+    this.userhash = userhash;
+    //this.separatePreviewUpload = separatePreviewUpload;
+  }
+
+  public async Upload(
+    shouldSave: boolean,
+    imageFile: ImageFile,
+  ): Promise<ImgstorImage> {
+    const { hostingServiceId, proxy, userhash } = this;
+
+    const fileToUpload = imageFile.processed?.file || imageFile.original.file;
+
+    if (fileToUpload.size > Catbox.UPLOAD_SIZE_LIMIT_BYTES) {
+      throw new Error(
+        `Image file size exceeds the limit of ${Catbox.UPLOAD_SIZE_LIMIT_BYTES / 1024 ** 2}MB.`,
+      );
     }
 
-    public async Upload(shouldSave: boolean, imageFile: ImageFile): Promise<ImgstorImage> {
-        const { hostingServiceId, proxy, userhash } = this;
-
-
-        const fileToUpload = imageFile.processed?.file || imageFile.original.file;
-
-        if (fileToUpload.size > Catbox.UPLOAD_SIZE_LIMIT_BYTES) {
-            throw new Error(`Image file size exceeds the limit of ${Catbox.UPLOAD_SIZE_LIMIT_BYTES / Math.pow(1024, 2)}MB.`);
-        }
-
-        if (!shouldSave) {
-            return await this.NoSaveUpload(fileToUpload, imageFile);
-        }
-        /*
+    if (!shouldSave) {
+      return await this.NoSaveUpload(fileToUpload, imageFile);
+    }
+    /*
                 if (separatePreviewUpload) {
         
                     if (!imageFile.preview) {
@@ -59,15 +91,14 @@ export default class Catbox {
         
                 }
         */
-        const mainRequest = (() => {
-
-            const formData = new FormData();
-            formData.append("userhash", userhash);
-            formData.append("reqtype", "fileupload");
-            formData.append("fileToUpload", fileToUpload);
-            return fetch(proxy, { method: "POST", body: formData });
-        })();
-        /*
+    const mainRequest = (() => {
+      const formData = new FormData();
+      formData.append("userhash", userhash);
+      formData.append("reqtype", "fileupload");
+      formData.append("fileToUpload", fileToUpload);
+      return fetch(proxy, { method: "POST", body: formData });
+    })();
+    /*
                 const previewRequest = (() => {
                     if (separatePreviewUpload && imageFile.preview) {
                         return Catbox.ConvertPngToWebpThumbnail(imageFile.preview.file).then((thumbnail) => {
@@ -80,126 +111,134 @@ export default class Catbox {
                     }
                 })();
         */
-        try {
+    try {
+      const imageUrl = await mainRequest.then(async (response) => {
+        if (response.ok) return response.text();
+        throw await response.text().then((message) => new Error(message));
+      });
 
-            const imageUrl = await mainRequest.then(async (response) => {
-                if (response.ok) return response.text();
-                throw await response.text().then((message) => new Error(message));
-            });
-
-            const previewUrl = imageUrl.trim().replace(/\/([^\/]+\/?)$/, `/thumbs/t_$1`);
-            /*
+      const previewUrl = imageUrl
+        .trim()
+        .replace(/\/([^/]+\/?)$/, `/thumbs/t_$1`);
+      /*
             const previewUrl = previewRequest ? await previewRequest.then(async (response) => {
                 if (response.ok) return response.text();
                 throw await response.text().then((message) => new Error(message));
             }) : undefined;
              */
 
-            return {
-                imageId: "",
-                name: imageFile.original.file.name,
-                mimeType: imageFile.original.file.type,
-                width: imageFile.width.toString(),
-                height: imageFile.height.toString(),
-                imageUrl: imageUrl,
-                previewUrl: previewUrl || imageUrl,
-                deleteImageUrl: userhash,
-                deletePreviewUrl: userhash,
-                title: ImgstorDB.EncodeText(imageFile.title),
-                description: ImgstorDB.EncodeText(imageFile.description),
-                createTime: new Date().getTime().toString(),
-                fileId: "",
-                hostingServiceId: hostingServiceId,
-            };
-        } catch (err) {
-            throw new Error(`Failed to upload image: ${(err as Error).message}`);
-        }
+      return {
+        imageId: "",
+        name: imageFile.original.file.name,
+        mimeType: imageFile.original.file.type,
+        width: imageFile.width.toString(),
+        height: imageFile.height.toString(),
+        imageUrl: imageUrl,
+        previewUrl: previewUrl || imageUrl,
+        deleteImageUrl: userhash,
+        deletePreviewUrl: userhash,
+        title: ImgstorDB.EncodeText(imageFile.title),
+        description: ImgstorDB.EncodeText(imageFile.description),
+        createTime: Date.now().toString(),
+        fileId: "",
+        hostingServiceId: hostingServiceId,
+      };
+    } catch (err) {
+      throw new Error(`Failed to upload image: ${(err as Error).message}`);
+    }
+  }
+
+  private async NoSaveUpload(
+    fileToUpload: File,
+    imageFile: ImageFile,
+  ): Promise<ImgstorImage> {
+    const { proxy, hostingServiceId } = this;
+
+    const formData = new FormData();
+    formData.append("reqtype", "fileupload");
+    formData.append("fileToUpload", fileToUpload);
+
+    try {
+      const response = await fetch(proxy, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw response.text().then((message) => new Error(message));
+      }
+
+      const result = await response.text();
+
+      return {
+        imageId: "",
+        name: imageFile.original.file.name,
+        mimeType: imageFile.original.file.type,
+        width: imageFile.width.toString(),
+        height: imageFile.height.toString(),
+        imageUrl: result,
+        previewUrl: result,
+        deleteImageUrl: "",
+        deletePreviewUrl: "",
+        title: ImgstorDB.EncodeText(imageFile.title),
+        description: ImgstorDB.EncodeText(imageFile.description),
+        createTime: Date.now().toString(),
+        fileId: "",
+        hostingServiceId: hostingServiceId,
+      };
+    } catch (error: any) {
+      throw new Error(`Failed to upload image: ${error.message}`);
+    }
+  }
+
+  public async Delete(image: ImgstorImage): Promise<void> {
+    const { proxy } = this;
+    const { imageUrl, deleteImageUrl, previewUrl, deletePreviewUrl } = image;
+
+    const deletePromises: Promise<Response>[] = [];
+
+    if (deleteImageUrl !== "" && imageUrl !== "") {
+      const file = imageUrl.replace(/.*\//g, "");
+
+      const form = new FormData();
+      form.append("reqtype", "deletefiles");
+      form.append("userhash", deleteImageUrl);
+      form.append("files", file);
+
+      deletePromises.push(
+        fetch(proxy, {
+          method: "POST",
+          body: form,
+        }),
+      );
     }
 
-    private async NoSaveUpload(fileToUpload: File, imageFile: ImageFile): Promise<ImgstorImage> {
-        const { proxy, hostingServiceId } = this;
+    if (
+      imageUrl != previewUrl &&
+      deletePreviewUrl !== "" &&
+      previewUrl !== ""
+    ) {
+      const previewFile = previewUrl.replace(/.*\//g, "");
+      const previewForm = new FormData();
+      previewForm.append("reqtype", "deletefiles");
+      previewForm.append("userhash", deletePreviewUrl);
+      previewForm.append("files", previewFile);
 
-        const formData = new FormData();
-        formData.append("reqtype", "fileupload");
-        formData.append("fileToUpload", fileToUpload);
-
-        try {
-            const response = await fetch(proxy, {
-                method: "POST",
-                body: formData,
-            });
-
-            if (!response.ok) {
-                throw response.text().then((message) => new Error(message));
-            }
-
-            const result = await response.text();
-
-            return {
-                imageId: "",
-                name: imageFile.original.file.name,
-                mimeType: imageFile.original.file.type,
-                width: imageFile.width.toString(),
-                height: imageFile.height.toString(),
-                imageUrl: result,
-                previewUrl: result,
-                deleteImageUrl: "",
-                deletePreviewUrl: "",
-                title: ImgstorDB.EncodeText(imageFile.title),
-                description: ImgstorDB.EncodeText(imageFile.description),
-                createTime: new Date().getTime().toString(),
-                fileId: "",
-                hostingServiceId: hostingServiceId,
-            };
-        } catch (error: any) {
-            throw new Error(`Failed to upload image: ${error.message}`);
-        }
+      deletePromises.push(
+        fetch(proxy, {
+          method: "POST",
+          body: previewForm,
+        }),
+      );
     }
 
-    public async Delete(image: ImgstorImage): Promise<void> {
-        const { proxy } = this;
-        const { imageUrl, deleteImageUrl, previewUrl, deletePreviewUrl } = image;
+    await Promise.all(deletePromises);
+  }
 
-        const deletePromises: Promise<Response>[] = [];
-
-        if (deleteImageUrl !== "" && imageUrl !== "") {
-            const file = imageUrl.replace(/.*\//g, '');
-
-            const form = new FormData();
-            form.append("reqtype", "deletefiles");
-            form.append("userhash", deleteImageUrl);
-            form.append("files", file);
-
-            deletePromises.push(
-                fetch(proxy, {
-                    method: "POST",
-                    body: form
-                })
-            );
-        }
-
-        if (imageUrl != previewUrl && deletePreviewUrl !== "" && previewUrl !== "") {
-            const previewFile = previewUrl.replace(/.*\//g, '');
-            const previewForm = new FormData();
-            previewForm.append("reqtype", "deletefiles");
-            previewForm.append("userhash", deletePreviewUrl);
-            previewForm.append("files", previewFile);
-
-            deletePromises.push(
-                fetch(proxy, {
-                    method: "POST",
-                    body: previewForm
-                })
-            );
-        }
-
-        await Promise.all(deletePromises);
-    }
-
-    public async Preview(image: ImgstorImage): Promise<string> {
-        return image.previewUrl;
-    }
-/*
+  public async Preview(image: ImgstorImage): Promise<string> {
+    return image.previewUrl;
+  }
+  /*
     private static async ConvertPngToWebpThumbnail(pngFile: File): Promise<File> {
         const MAX_DIMENSION = 640;
         const WEBP_MIME_TYPE = "image/webp";

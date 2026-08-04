@@ -1,330 +1,363 @@
-import React, { useEffect, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
-
-import { useNotifications } from "global-components/notifications";
+import TagItem from "components/tags-selector/tag-item";
 import { useAlerts } from "global-components/alerts";
 import { useLoader } from "global-components/loader";
-import { Message, MessageButton } from "structs/message";
+import { useNotifications } from "global-components/notifications";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { useImgstor } from "services/imgstor";
-import { ImgstorTag } from "services/imgstor-db";
-import { TagsSelectorEvent } from "services/tags-selector";
-
-import TagItem from "components/tags-selector/tag-item";
-
+import type { ImgstorTag } from "services/imgstor-db";
+import type { TagsSelectorEvent } from "services/tags-selector";
+import { Message, MessageButton } from "structs/message";
 
 import componentStyles from "styles/components.module.scss";
 import styles from "./style.module.scss";
 
 interface DraggingPosation {
-    x: number
-    y: number
+  x: number;
+  y: number;
 }
 
 const TagsSelector: React.FC = () => {
-    const notifications = useNotifications();
-    const loader = useLoader();
-    const alerts = useAlerts();
-    const { t } = useTranslation();
-    const imgstor = useImgstor();
-    const [target, setTarget] = useState<string>();
-    const [selectedTags, setSelectedTags] = useState<ImgstorTag[]>([]);
-    const [notusedTags, setNotusedTags] = useState<ImgstorTag[]>([]);
-    const [draggingTag, setDraggingTag] = useState<ImgstorTag>();
-    const [draggingPosation, setDraggingPosation] = useState<DraggingPosation>();
-    const selector = useRef<HTMLDivElement>(null);
-    const selected = useRef<HTMLDivElement>(null);
-    const notused = useRef<HTMLDivElement>(null);
-    const remove = useRef<HTMLDivElement>(null);
+  const notifications = useNotifications();
+  const loader = useLoader();
+  const alerts = useAlerts();
+  const { t } = useTranslation();
+  const imgstor = useImgstor();
+  const [target, setTarget] = useState<string>();
+  const [selectedTags, setSelectedTags] = useState<ImgstorTag[]>([]);
+  const [notusedTags, setNotusedTags] = useState<ImgstorTag[]>([]);
+  const [draggingTag, setDraggingTag] = useState<ImgstorTag>();
+  const [draggingPosation, setDraggingPosation] = useState<DraggingPosation>();
+  const selector = useRef<HTMLDivElement>(null);
+  const selected = useRef<HTMLDivElement>(null);
+  const notused = useRef<HTMLDivElement>(null);
+  const remove = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
+  useEffect(() => {
+    const displayChangedHandler = (e: TagsSelectorEvent<"DisplayChanged">) => {
+      if (e.detail) {
+        const { target, origin } = e.detail;
+        setSelectedTags([...origin]);
 
-        const displayChangedHandler = (e: TagsSelectorEvent<"DisplayChanged">) => {
-
-            if (e.detail) {
-                const { target, origin } = e.detail;
-                setSelectedTags([...origin]);
-
-                const tagMap: { [key: string]: boolean } = {};
-                for (const { tagId } of origin) {
-                    tagMap[tagId] = true;
-                }
-
-                const notused = imgstor.db.GetTags().filter(({ tagId }) => tagMap[tagId] === undefined);
-                setNotusedTags(notused);
-
-                setTarget(target);
-            } else {
-                setTarget(undefined);
-                if (imgstor.db.Changed) {
-                    (async () => {
-                        const loading = loader.append();
-                        const saving = new Message({
-                            type: Message.Type.NORMAL,
-                            content: t("saving")
-                        });
-                        notifications.append(saving);
-                        try {
-                            await imgstor.db.Save();
-                        }
-                        catch (err) {
-                            notifications.append(
-                                new Message({
-                                    type: Message.Type.ERROR,
-                                    content: (err as Error).message
-                                })
-                            );
-                        }
-                        finally {
-                            saving.remove();
-                            loading.remove();
-                        }
-                    })();
-                }
-            }
+        const tagMap: { [key: string]: boolean } = {};
+        for (const { tagId } of origin) {
+          tagMap[tagId] = true;
         }
 
-        imgstor.tagsSelector.on("DisplayChanged", displayChangedHandler);
+        const notused = imgstor.db
+          .GetTags()
+          .filter(({ tagId }) => tagMap[tagId] === undefined);
+        setNotusedTags(notused);
 
-        return () => {
-            imgstor.tagsSelector.off("DisplayChanged", displayChangedHandler);
+        setTarget(target);
+      } else {
+        setTarget(undefined);
+        if (imgstor.db.Changed) {
+          (async () => {
+            const loading = loader.append();
+            const saving = new Message({
+              type: Message.Type.NORMAL,
+              content: t("saving"),
+            });
+            notifications.append(saving);
+            try {
+              await imgstor.db.Save();
+            } catch (err) {
+              notifications.append(
+                new Message({
+                  type: Message.Type.ERROR,
+                  content: (err as Error).message,
+                }),
+              );
+            } finally {
+              saving.remove();
+              loading.remove();
+            }
+          })();
         }
-    }, []);
-
-
-
-    const handleRemoveTag = (tag: ImgstorTag) => {
-        const { tagId, name } = tag;
-
-        const confirm = new MessageButton(t("main.confirm"));
-        confirm.on("Clicked", () => {
-
-            if (selectedTags.find(t => t.tagId === tagId)) {
-                setSelectedTags(selectedTags.filter(t => t.tagId !== tagId));
-            }
-
-            if (notusedTags.find(t => t.tagId === tagId)) {
-                setNotusedTags(notusedTags.filter(t => t.tagId !== tagId));
-            }
-
-            imgstor.db.DeleteTag(tagId);
-        });
-
-        const removeMessage = new Message({
-            type: Message.Type.ALERT,
-            content: t("tags-selector.alert.remove-tag", { name }),
-            buttons: [
-                new MessageButton(t("main.cancel")),
-                confirm
-            ]
-        });
-        alerts.append(removeMessage);
+      }
     };
 
-    const handleSelectTag = ({ tagId }: ImgstorTag) => {
-        const tagIndex = notusedTags.findIndex((t) => t.tagId === tagId);
-        if (tagIndex === -1) return;
-        const notused = notusedTags;
-        const tag = notused.splice(tagIndex, 1)[0];
+    imgstor.tagsSelector.on("DisplayChanged", displayChangedHandler);
 
-        setSelectedTags([...selectedTags, tag]);
-        setNotusedTags([...notused]);
-    }
+    return () => {
+      imgstor.tagsSelector.off("DisplayChanged", displayChangedHandler);
+    };
+  }, []);
 
-    const handleUnselectTag = ({ tagId }: ImgstorTag) => {
-        const tagIndex = selectedTags.findIndex((t) => t.tagId === tagId);
-        if (tagIndex === -1) return;
-        const selected = selectedTags;
-        const tag = selected.splice(tagIndex, 1)[0];
+  const handleRemoveTag = (tag: ImgstorTag) => {
+    const { tagId, name } = tag;
 
-        setNotusedTags([...notusedTags, tag]);
-        setSelectedTags([...selected]);
-    }
+    const confirm = new MessageButton(t("main.confirm"));
+    confirm.on("Clicked", () => {
+      if (selectedTags.find((t) => t.tagId === tagId)) {
+        setSelectedTags(selectedTags.filter((t) => t.tagId !== tagId));
+      }
 
+      if (notusedTags.find((t) => t.tagId === tagId)) {
+        setNotusedTags(notusedTags.filter((t) => t.tagId !== tagId));
+      }
 
-    useEffect(() => {
+      imgstor.db.DeleteTag(tagId);
+    });
 
-        const container = selector.current;
-        const select = selected.current;
-        if (!container || !select) return;
+    const removeMessage = new Message({
+      type: Message.Type.ALERT,
+      content: t("tags-selector.alert.remove-tag", { name }),
+      buttons: [new MessageButton(t("main.cancel")), confirm],
+    });
+    alerts.append(removeMessage);
+  };
 
-        const handleDragEnd = (e: MouseEvent | TouchEvent) => {
-            if (e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
+  const handleSelectTag = ({ tagId }: ImgstorTag) => {
+    const tagIndex = notusedTags.findIndex((t) => t.tagId === tagId);
+    if (tagIndex === -1) return;
+    const notused = notusedTags;
+    const tag = notused.splice(tagIndex, 1)[0];
 
-            let clientX = 0;
-            let clientY = 0;
+    setSelectedTags([...selectedTags, tag]);
+    setNotusedTags([...notused]);
+  };
 
-            if ("touches" in e) {
-                const touch = e.touches[0] || e.changedTouches[0];
-                clientX = touch.clientX;
-                clientY = touch.clientY;
-            } else {
-                clientX = e.clientX;
-                clientY = e.clientY;
-            }
+  const handleUnselectTag = ({ tagId }: ImgstorTag) => {
+    const tagIndex = selectedTags.findIndex((t) => t.tagId === tagId);
+    if (tagIndex === -1) return;
+    const selected = selectedTags;
+    const tag = selected.splice(tagIndex, 1)[0];
 
-            if (draggingTag) {
-                const selectedRect = selected.current?.getBoundingClientRect();
-                const notusedRect = notused.current?.getBoundingClientRect();
-                const removeRect = remove.current?.getBoundingClientRect();
+    setNotusedTags([...notusedTags, tag]);
+    setSelectedTags([...selected]);
+  };
 
-                const isInSelected = selectedRect && clientX >= selectedRect.left && clientX <= selectedRect.right && clientY >= selectedRect.top && clientY <= selectedRect.bottom;
-                const isInNotused = notusedRect && clientX >= notusedRect.left && clientX <= notusedRect.right && clientY >= notusedRect.top && clientY <= notusedRect.bottom;
-                const isInRemove = removeRect && clientX >= removeRect.left && clientX <= removeRect.right && clientY >= removeRect.top && clientY <= removeRect.bottom;
+  useEffect(() => {
+    const container = selector.current;
+    const select = selected.current;
+    if (!container || !select) return;
 
-                if (isInSelected) handleSelectTag(draggingTag);
-                if (isInNotused) handleUnselectTag(draggingTag);
-                if (isInRemove) handleRemoveTag(draggingTag);
-            }
-
-            setDraggingPosation(undefined);
-            setDraggingTag(undefined);
-        }
-
-
-
-        const handlePointMove = (e: MouseEvent | TouchEvent) => {
-            let clientX = 0;
-            let clientY = 0;
-
-            if ("touches" in e) {
-                const touch = e.touches[0] || e.changedTouches[0];
-                clientX = touch.clientX;
-                clientY = touch.clientY;
-            } else {
-                clientX = e.clientX;
-                clientY = e.clientY;
-            }
-
-            const rect = container.getBoundingClientRect();
-            const x = clientX - rect.left;
-            const y = clientY - rect.top;
-
-            setDraggingPosation({ x, y });
-        };
-
-        if (draggingTag) {
-            window.addEventListener("mouseup", handleDragEnd);
-            window.addEventListener("touchend", handleDragEnd);
-
-            container.addEventListener("mouseleave", handleDragEnd);
-
-            container.addEventListener("mousemove", handlePointMove);
-            container.addEventListener("touchmove", handlePointMove);
-
-
-
-        } else {
-            setDraggingPosation(undefined);
-        }
-
-
-        return () => {
-            window.removeEventListener("mouseup", handleDragEnd);
-            window.removeEventListener("touchend", handleDragEnd);
-
-            container.removeEventListener("mouseleave", handleDragEnd);
-
-            container.removeEventListener("mousemove", handlePointMove);
-            container.removeEventListener("touchmove", handlePointMove);
-        }
-    }, [draggingTag]);
-
-    const handleCreateTag = (e: React.FormEvent<HTMLFormElement>) => {
-        const target = e.target as HTMLFormElement;
-        e.stopPropagation();
+    const handleDragEnd = (e: MouseEvent | TouchEvent) => {
+      if (e) {
         e.preventDefault();
+        e.stopPropagation();
+      }
 
-        const form = new FormData(target);
-        const name = (form.get("tag_name") || "").toString();
+      let clientX = 0;
+      let clientY = 0;
 
-        if (name === "") return;
+      if ("touches" in e) {
+        const touch = e.touches[0] || e.changedTouches[0];
+        clientX = touch.clientX;
+        clientY = touch.clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
 
-        target.reset();
+      if (draggingTag) {
+        const selectedRect = selected.current?.getBoundingClientRect();
+        const notusedRect = notused.current?.getBoundingClientRect();
+        const removeRect = remove.current?.getBoundingClientRect();
 
-        const tagId = imgstor.db.InsertTag(name);
-        const tag: ImgstorTag = { tagId, name };
+        const isInSelected =
+          selectedRect &&
+          clientX >= selectedRect.left &&
+          clientX <= selectedRect.right &&
+          clientY >= selectedRect.top &&
+          clientY <= selectedRect.bottom;
+        const isInNotused =
+          notusedRect &&
+          clientX >= notusedRect.left &&
+          clientX <= notusedRect.right &&
+          clientY >= notusedRect.top &&
+          clientY <= notusedRect.bottom;
+        const isInRemove =
+          removeRect &&
+          clientX >= removeRect.left &&
+          clientX <= removeRect.right &&
+          clientY >= removeRect.top &&
+          clientY <= removeRect.bottom;
 
-        setSelectedTags([...selectedTags, tag]);
+        if (isInSelected) handleSelectTag(draggingTag);
+        if (isInNotused) handleUnselectTag(draggingTag);
+        if (isInRemove) handleRemoveTag(draggingTag);
+      }
+
+      setDraggingPosation(undefined);
+      setDraggingTag(undefined);
+    };
+
+    const handlePointMove = (e: MouseEvent | TouchEvent) => {
+      let clientX = 0;
+      let clientY = 0;
+
+      if ("touches" in e) {
+        const touch = e.touches[0] || e.changedTouches[0];
+        clientX = touch.clientX;
+        clientY = touch.clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+
+      const rect = container.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+
+      setDraggingPosation({ x, y });
+    };
+
+    if (draggingTag) {
+      window.addEventListener("mouseup", handleDragEnd);
+      window.addEventListener("touchend", handleDragEnd);
+
+      container.addEventListener("mouseleave", handleDragEnd);
+
+      container.addEventListener("mousemove", handlePointMove);
+      container.addEventListener("touchmove", handlePointMove);
+    } else {
+      setDraggingPosation(undefined);
     }
 
-    const handleDragTag = (tag: ImgstorTag) => {
-        setDraggingTag(tag);
+    return () => {
+      window.removeEventListener("mouseup", handleDragEnd);
+      window.removeEventListener("touchend", handleDragEnd);
+
+      container.removeEventListener("mouseleave", handleDragEnd);
+
+      container.removeEventListener("mousemove", handlePointMove);
+      container.removeEventListener("touchmove", handlePointMove);
+    };
+  }, [draggingTag]);
+
+  const handleCreateTag = (e: React.FormEvent<HTMLFormElement>) => {
+    const target = e.target as HTMLFormElement;
+    e.stopPropagation();
+    e.preventDefault();
+
+    const form = new FormData(target);
+    const name = (form.get("tag_name") || "").toString();
+
+    if (name === "") return;
+
+    target.reset();
+
+    const tagId = imgstor.db.InsertTag(name);
+    const tag: ImgstorTag = { tagId, name };
+
+    setSelectedTags([...selectedTags, tag]);
+  };
+
+  const handleDragTag = (tag: ImgstorTag) => {
+    setDraggingTag(tag);
+  };
+
+  const HandleClickTag = (tag: ImgstorTag) => {
+    if (selectedTags.find((t) => t.tagId === tag.tagId)) {
+      handleUnselectTag(tag);
+    } else {
+      handleSelectTag(tag);
     }
+  };
 
-    const HandleClickTag = (tag: ImgstorTag) => {
+  const handleCancel = () => {
+    imgstor.tagsSelector.selected();
+  };
 
-        if (selectedTags.find((t) => t.tagId === tag.tagId)) {
-            handleUnselectTag(tag);
-        } else {
-            handleSelectTag(tag);
-        }
+  const handleConfirm = () => {
+    imgstor.tagsSelector.selected(selectedTags);
+  };
 
-    }
+  if (target === undefined) {
+    return <></>;
+  }
 
-    const handleCancel = () => {
-        imgstor.tagsSelector.selected();
-    }
-
-    const handleConfirm = () => {
-        imgstor.tagsSelector.selected(selectedTags);
-    }
-
-    if (target === undefined) {
-        return <></>;
-    }
-
-    return <div className={styles.tags_selector_container}>
-        <div className={styles.tags_selector} ref={selector}>
-            <div className={styles.tags_selector_selected_tags} ref={selected}>
-                {selectedTags.map(
-                    (tag) => <TagItem className={componentStyles.tag} key={tag.tagId} tag={tag} ondrag={handleDragTag} onclick={HandleClickTag} />
-                )}
-            </div>
-
-            <div className={styles.tags_selector_tag_options}>
-
-                <form className={styles.tags_selector_tag_option} onSubmit={handleCreateTag}>
-
-                    <span className={styles.tags_selector_tag_option_label}>{t("tags-selector.tag.create.label")}</span>
-                    <input type="textbox" className={styles.tags_selector_add_tag_input} name="tag_name" />
-                    <button className={styles.tags_selector_add_tag_button} type="submit">{t("main.confirm")}</button>
-
-                </form>
-
-                <form className={styles.tags_selector_tag_option}>
-
-                    <span className={styles.tags_selector_tag_option_label}>{t("tags-selector.tag.remove.label")}</span>
-                    <div className={styles.tags_selector_remove_tag_block} data-label={t("tags-selector.tag.remove.drag")}
-                        ref={remove}
-                    ></div>
-
-                </form>
-            </div>
-
-            <div className={styles.tags_selector_not_used_tags} ref={notused}>
-                {notusedTags.map(
-                    (tag) => <TagItem className={componentStyles.tag} key={tag.tagId} tag={tag} ondrag={handleDragTag} onclick={HandleClickTag} />
-                )}
-            </div>
-
-            <div className={styles.tags_selector_options}>
-                <button className={styles.tags_selector_option} onClick={handleCancel}>{t("main.cancel")}</button>
-                <button className={styles.tags_selector_option} onClick={handleConfirm}>{t("main.confirm")}</button>
-            </div>
-
-            {draggingTag && draggingPosation &&
-                <div
-                    className={styles.tags_selector_dragging_tag}
-                    style={{ top: draggingPosation.y, left: draggingPosation.x }}
-                >{draggingTag.name}</div>
-            }
-
+  return (
+    <div className={styles.tags_selector_container}>
+      <div className={styles.tags_selector} ref={selector}>
+        <div className={styles.tags_selector_selected_tags} ref={selected}>
+          {selectedTags.map((tag) => (
+            <TagItem
+              className={componentStyles.tag}
+              key={tag.tagId}
+              tag={tag}
+              ondrag={handleDragTag}
+              onclick={HandleClickTag}
+            />
+          ))}
         </div>
-    </div >;
-}
+
+        <div className={styles.tags_selector_tag_options}>
+          <form
+            className={styles.tags_selector_tag_option}
+            onSubmit={handleCreateTag}
+          >
+            <span className={styles.tags_selector_tag_option_label}>
+              {t("tags-selector.tag.create.label")}
+            </span>
+            <input
+              type="textbox"
+              className={styles.tags_selector_add_tag_input}
+              name="tag_name"
+            />
+            <button
+              className={styles.tags_selector_add_tag_button}
+              type="submit"
+            >
+              {t("main.confirm")}
+            </button>
+          </form>
+
+          <form className={styles.tags_selector_tag_option}>
+            <span className={styles.tags_selector_tag_option_label}>
+              {t("tags-selector.tag.remove.label")}
+            </span>
+            <div
+              className={styles.tags_selector_remove_tag_block}
+              data-label={t("tags-selector.tag.remove.drag")}
+              ref={remove}
+            ></div>
+          </form>
+        </div>
+
+        <div className={styles.tags_selector_not_used_tags} ref={notused}>
+          {notusedTags.map((tag) => (
+            <TagItem
+              className={componentStyles.tag}
+              key={tag.tagId}
+              tag={tag}
+              ondrag={handleDragTag}
+              onclick={HandleClickTag}
+            />
+          ))}
+        </div>
+
+        <div className={styles.tags_selector_options}>
+          <button
+            className={styles.tags_selector_option}
+            onClick={handleCancel}
+          >
+            {t("main.cancel")}
+          </button>
+          <button
+            className={styles.tags_selector_option}
+            onClick={handleConfirm}
+          >
+            {t("main.confirm")}
+          </button>
+        </div>
+
+        {draggingTag && draggingPosation && (
+          <div
+            className={styles.tags_selector_dragging_tag}
+            style={{ top: draggingPosation.y, left: draggingPosation.x }}
+          >
+            {draggingTag.name}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export default TagsSelector;

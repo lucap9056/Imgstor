@@ -1,27 +1,25 @@
-import { useState, useEffect } from 'react';
-import { HashRouter, Routes, Route } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { buildResult, match } from 'resultant.js/rustify';
-
-import Notifications, { useNotifications } from 'global-components/notifications';
-import Loader, { useLoader } from 'global-components/loader';
-import Alerts, { useAlerts } from 'global-components/alerts';
+import Alerts, { useAlerts } from "global-components/alerts";
+import Loader, { useLoader } from "global-components/loader";
+import Notifications, {
+  useNotifications,
+} from "global-components/notifications";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { HashRouter, Route, Routes } from "react-router-dom";
+import { buildResult, match } from "resultant.js/rustify";
 import "./i18n";
 
-import { Message } from "structs/message";
-
-import TagsSelector from 'components/tags-selector';
-import Settings from 'components/settings';
-import MainView from "components/viewer";
+import Images from "components/images";
+import Settings from "components/settings";
+import SideOptions from "components/side-options";
 import SignIn from "components/sign-in";
-import SideOptions from 'components/side-options';
-import Uploader from 'components/uploader';
-
-import Google, { NotSignedInError } from 'services/google';
-import Imgstor, { ImgstorProvider } from 'services/imgstor';
+import TagsSelector from "components/tags-selector";
+import Uploader from "components/uploader";
+import MainView from "components/viewer";
 import RoutePaths from "route-paths/index";
-import Images from 'components/images';
-
+import Google, { NotSignedInError } from "services/google";
+import Imgstor, { ImgstorProvider } from "services/imgstor";
+import { Message } from "structs/message";
 
 function App() {
   const notifications = useNotifications();
@@ -34,21 +32,19 @@ function App() {
   const [authInstance, SetAuthInstance] = useState<gapi.auth2.GoogleAuth>();
 
   useEffect(() => {
-
     const loading = loader.append();
 
     const loadingMessage = notifications.append(
       new Message({
         type: Message.Type.ALERT,
-        content: t('google.loading')
-      })
+        content: t("google.loading"),
+      }),
     );
 
     buildResult(async () => {
       const google = await Google.new();
       return Imgstor.New(google);
     }).then((result) => {
-
       match(result, {
         Ok(value) {
           SetImgstor(value);
@@ -58,29 +54,22 @@ function App() {
           if (err instanceof NotSignedInError) {
             SetImgstor(undefined);
             SetAuthInstance(err.authInstance);
-          }
-          else {
-
+          } else {
             alerts.append(
               new Message({
                 type: Message.Type.ERROR,
-                content: (err as Error).message
-              })
+                content: (err as Error).message,
+              }),
             );
-
           }
-
-        }
-      })
+        },
+      });
 
       setLoaded(true);
       loading.remove();
       loadingMessage.remove();
-
     });
-
   }, []);
-
 
   const HandleSignIn = async () => {
     console.log(authInstance);
@@ -105,44 +94,53 @@ function App() {
         notifications.append(
           new Message({
             type: Message.Type.ERROR,
-            content: t("google.signin.fail")
-          })
+            content: t("google.signin.fail"),
+          }),
         );
         console.error(err);
-      }
+      },
     });
 
     setLoaded(true);
     loading.remove();
+  };
 
-  }
-
-  return <>
-    {
-      loaded ?
-        imgstor ?
+  return (
+    <>
+      {loaded ? (
+        imgstor ? (
           <ImgstorProvider value={imgstor}>
             <HashRouter>
               <Images />
               <SideOptions />
               <Routes>
                 <Route path={RoutePaths.UPLOAD} element={<Uploader />} />
-                <Route path={RoutePaths.FOCUS_VIEW + "/:imageId"} element={<MainView />} />
-                <Route path={RoutePaths.SETTINGS + "/*"} element={<Settings />} />
+                <Route
+                  path={`${RoutePaths.FOCUS_VIEW}/:imageId`}
+                  element={<MainView />}
+                />
+                <Route
+                  path={`${RoutePaths.SETTINGS}/*`}
+                  element={<Settings />}
+                />
                 <Route index element={<></>} />
               </Routes>
             </HashRouter>
 
             <TagsSelector />
-          </ImgstorProvider> :
+          </ImgstorProvider>
+        ) : (
           <SignIn onSignIn={HandleSignIn} />
-        : <></>
-    }
+        )
+      ) : (
+        <></>
+      )}
 
-    <Alerts />
-    <Loader.Component />
-    <Notifications />
-  </>;
+      <Alerts />
+      <Loader.Component />
+      <Notifications />
+    </>
+  );
 }
 
 export default App;
