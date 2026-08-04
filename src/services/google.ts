@@ -14,8 +14,6 @@ const REFRESH_MARGIN_SECONDS = 60;
 
 const CLIENT_ID = process.env.VITE_GOOGLE_CLIENT_ID;
 
-let currentAccessToken = "";
-
 function RequestAccessToken(
   prompt: "" | "consent",
 ): Promise<google.accounts.oauth2.TokenResponse> {
@@ -57,8 +55,7 @@ export default class Google extends EventDispatcher<GoogleEventDefinitions> {
       response = await RequestAccessToken("consent");
     }
 
-    currentAccessToken = response.access_token;
-    const drive = await Drive.new();
+    const drive = await Drive.new(response.access_token);
 
     return new Google(response, drive);
   };
@@ -85,7 +82,7 @@ export default class Google extends EventDispatcher<GoogleEventDefinitions> {
       try {
         const response = await RequestAccessToken("");
         this.accessToken = response.access_token;
-        currentAccessToken = response.access_token;
+        this.googleDrive.setAccessToken(response.access_token);
         this.scheduleRefresh(response.expires_in);
       } catch {
         this.emit("StatusChanged", { signedIn: false });
@@ -108,7 +105,7 @@ export default class Google extends EventDispatcher<GoogleEventDefinitions> {
       clearTimeout(this.refreshTimeoutId);
     }
     this.accessToken = "";
-    currentAccessToken = "";
+    this.googleDrive.setAccessToken("");
 
     if (!accessToken) {
       this.emit("StatusChanged", { signedIn: false });
@@ -148,14 +145,18 @@ const DRIVE_API_BASE = "https://www.googleapis.com/drive/v3";
 const DRIVE_UPLOAD_BASE = "https://www.googleapis.com/upload/drive/v3";
 const DRIVE_FILE_FIELDS = "id, name, mimeType, parents, webViewLink, iconLink";
 
-function DriveAuthHeaders(): HeadersInit {
-  return { Authorization: `Bearer ${currentAccessToken}` };
+function DriveAuthHeaders(accessToken: string): HeadersInit {
+  return { Authorization: `Bearer ${accessToken}` };
 }
 
-async function DriveFetch(path: string, init?: RequestInit): Promise<Response> {
+async function DriveFetch(
+  accessToken: string,
+  path: string,
+  init?: RequestInit,
+): Promise<Response> {
   const response = await fetch(`${DRIVE_API_BASE}${path}`, {
     ...init,
-    headers: { ...DriveAuthHeaders(), ...init?.headers },
+    headers: { ...DriveAuthHeaders(accessToken), ...init?.headers },
   });
 
   if (!response.ok) {
@@ -166,11 +167,16 @@ async function DriveFetch(path: string, init?: RequestInit): Promise<Response> {
   return response;
 }
 
-async function DriveFetchJson<T>(path: string, init?: RequestInit): Promise<T> {
-  return (await DriveFetch(path, init)).json();
+async function DriveFetchJson<T>(
+  accessToken: string,
+  path: string,
+  init?: RequestInit,
+): Promise<T> {
+  return (await DriveFetch(accessToken, path, init)).json();
 }
 
 async function ListFiles(
+  accessToken: string,
   query: string,
   fields: string,
 ): Promise<DriveFileList> {
@@ -181,16 +187,17 @@ async function ListFiles(
     q: query,
   });
 
-  return DriveFetchJson<DriveFileList>(`/files?${params}`);
+  return DriveFetchJson<DriveFileList>(accessToken, `/files?${params}`);
 }
 
 async function CreateFile(
+  accessToken: string,
   metadata: { name: string; mimeType: string; parents: string[] },
   fields?: string,
 ): Promise<DriveFile> {
   const params = fields ? `?${new URLSearchParams({ fields })}` : "";
 
-  return DriveFetchJson<DriveFile>(`/files${params}`, {
+  return DriveFetchJson<DriveFile>(accessToken, `/files${params}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(metadata),
@@ -200,18 +207,20 @@ async function CreateFile(
 export class Drive {
   public static readonly AppName: string = process.env.VITE_APP_NAME || "";
   private appRoot: DriveFile;
+  private accessToken: string;
 
-  public static new = async (): Promise<Drive> => {
+  public static new = async (accessToken: string): Promise<Drive> => {
     if (Drive.AppName === "") {
       throw new Error("APP_NAME cannot be empty.");
     }
 
     const q = `'appDataFolder' in parents and name = '${Drive.AppName}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
 
-    const { files } = await ListFiles(q, DRIVE_FILE_FIELDS);
+    const { files } = await ListFiles(accessToken, q, DRIVE_FILE_FIELDS);
 
     if (files === undefined || files.length === 0) {
       const root = await CreateFile(
+        accessToken,
         {
           name: Drive.AppName,
           mimeType: "application/vnd.google-apps.folder",
@@ -220,18 +229,23 @@ export class Drive {
         DRIVE_FILE_FIELDS,
       );
 
-      return new Drive(root);
+      return new Drive(root, accessToken);
     }
 
-    return new Drive(files[0]);
+    return new Drive(files[0], accessToken);
   };
 
-  constructor(appRoot: DriveFile) {
+  constructor(appRoot: DriveFile, accessToken: string) {
     if (!appRoot.id) {
       throw new Error("Drive app root folder has no ID.");
     }
 
     this.appRoot = appRoot;
+    this.accessToken = accessToken;
+  }
+
+  public setAccessToken(accessToken: string): void {
+    this.accessToken = accessToken;
   }
 
   public async searchFiles(
@@ -252,18 +266,22 @@ export class Drive {
     const q = `${parents}${files} and trashed = false`;
 
     try {
-      return await ListFiles(q, DRIVE_FILE_FIELDS);
+      return await ListFiles(this.accessToken, q, DRIVE_FILE_FIELDS);
     } catch (error) {
       throw new Error(`Error fetching files: ${(error as Error).message}`);
     }
   }
 
   public async readFile(fileId: string): Promise<string> {
-    return (await DriveFetch(`/files/${fileId}?alt=media`)).text();
+    return (
+      await DriveFetch(this.accessToken, `/files/${fileId}?alt=media`)
+    ).text();
   }
 
   public async readFileBuffer(fileId: string): Promise<ArrayBuffer> {
-    return (await DriveFetch(`/files/${fileId}?alt=media`)).arrayBuffer();
+    return (
+      await DriveFetch(this.accessToken, `/files/${fileId}?alt=media`)
+    ).arrayBuffer();
   }
 
   public async writeFile(fileId: string, file: File): Promise<void> {
@@ -273,7 +291,7 @@ export class Drive {
       `${DRIVE_UPLOAD_BASE}/files/${fileId}?uploadType=media&mimeType=${file.type}`,
       {
         method: "PATCH",
-        headers: DriveAuthHeaders(),
+        headers: DriveAuthHeaders(this.accessToken),
         body: content,
       },
     );
@@ -292,7 +310,11 @@ export class Drive {
       throw new Error("createFile: no parentId given and app root has no ID.");
     }
 
-    return CreateFile({ name, mimeType, parents: [parentId] });
+    return CreateFile(this.accessToken, {
+      name,
+      mimeType,
+      parents: [parentId],
+    });
   }
 
   public async createFolder(
@@ -310,6 +332,7 @@ export class Drive {
     }
 
     return CreateFile(
+      this.accessToken,
       {
         name: folderName,
         mimeType: "application/vnd.google-apps.folder",
@@ -320,11 +343,14 @@ export class Drive {
   }
 
   public async deleteFile(fileId: string): Promise<void> {
-    await DriveFetch(`/files/${fileId}`, { method: "DELETE" });
+    await DriveFetch(this.accessToken, `/files/${fileId}`, {
+      method: "DELETE",
+    });
   }
 
   public async using(): Promise<number> {
     const { files } = await ListFiles(
+      this.accessToken,
       `'${this.appRoot.id}' in parents and trashed = false`,
       "id, name, size",
     );
@@ -338,7 +364,9 @@ export class Drive {
   }
 
   public async clear(): Promise<void> {
-    await DriveFetch(`/files/${this.appRoot.id}`, { method: "DELETE" });
+    await DriveFetch(this.accessToken, `/files/${this.appRoot.id}`, {
+      method: "DELETE",
+    });
     console.log(`Files deleted.`);
   }
 }
