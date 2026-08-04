@@ -1,7 +1,7 @@
 import { createContext, useContext } from "react";
 import Converter from "services/converter";
 import type Google from "services/google";
-import type { Drive } from "services/google";
+import type { Drive, DriveFile } from "services/google";
 import type { ImageHostingService } from "services/image-hosting-services";
 import Catbox from "services/image-hosting-services/catbox";
 import Imgur from "services/image-hosting-services/imgur";
@@ -79,7 +79,7 @@ export default class Imgstor extends EventDispatcher<ImgstorEventDefinitions> {
     }
   }
 
-  private static ImagesFolder(drive: Drive): Promise<gapi.client.drive.File> {
+  private static ImagesFolder(drive: Drive): Promise<DriveFile> {
     return new Promise((resolve, reject) => {
       drive
         .searchFiles([], Imgstor.OriginalFilesFolderName)
@@ -110,12 +110,12 @@ export default class Imgstor extends EventDispatcher<ImgstorEventDefinitions> {
   public readonly db: ImgstorDB;
   public readonly tagsSelector: TagsSelector;
   public readonly converter: Converter = new Converter();
-  private filesFolder: gapi.client.drive.File;
+  private filesFolder: DriveFile;
   private imageHostingServices: AvailableHostingServicesMap = {};
   constructor(
     google: Google,
     settings: Settings,
-    filesFolder: gapi.client.drive.File,
+    filesFolder: DriveFile,
     db: ImgstorDB,
   ) {
     super();
@@ -213,9 +213,8 @@ export default class Imgstor extends EventDispatcher<ImgstorEventDefinitions> {
   }
 
   public async DownloadImage(image: ImgstorImage): Promise<File> {
-    const res = await this.google.drive.readFile(image.fileId);
-    const bytes = Uint8Array.from(res, (char) => char.charCodeAt(0));
-    const blob = new Blob([bytes], { type: image.mimeType });
+    const buffer = await this.google.drive.readFileBuffer(image.fileId);
+    const blob = new Blob([buffer], { type: image.mimeType });
     return new File([blob], image.name);
   }
 
