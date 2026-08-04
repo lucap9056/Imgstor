@@ -37,7 +37,7 @@ const SideOptions: React.FC = () => {
 
     const content = { ...searchContent, sort };
     imgstor.setImageSearch(content);
-  }, [searchContent, sort]);
+  }, [searchContent, sort, imgstor]);
 
   const handleHideSidePage = () => {
     setSidePageName(undefined);

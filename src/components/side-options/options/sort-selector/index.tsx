@@ -23,7 +23,7 @@ const SortSelector: React.FC<Props> = ({ defaultValue, onchange, hide }) => {
 
   useEffect(() => {
     onchange(sort);
-  }, [sort]);
+  }, [sort, onchange]);
 
   const sortOptionsInvisible = useCallback(
     (e: MouseEvent) => {

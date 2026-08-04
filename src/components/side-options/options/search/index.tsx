@@ -37,7 +37,7 @@ const Search: React.FC<Props> = ({ onchange, hide }) => {
       tags: selectedTags || [],
       sort: ImgstorImage.SORT.DEFAULT,
     });
-  }, [searchTitle, selectedTags]);
+  }, [searchTitle, selectedTags, onchange]);
 
   useEffect(() => {
     const TagsSelectedHandler = (e: TagsSelectorEvent<"TagsSelected">) => {
@@ -55,7 +55,7 @@ const Search: React.FC<Props> = ({ onchange, hide }) => {
     return () => {
       imgstor.tagsSelector.off("TagsSelected", TagsSelectedHandler);
     };
-  }, []);
+  }, [imgstor]);
 
   const handleSelectTags = () => {
     imgstor.tagsSelector.request(componentId, selectedTags);
