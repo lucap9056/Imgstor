@@ -214,7 +214,7 @@ export default class Catbox {
     }
 
     if (
-      imageUrl != previewUrl &&
+      imageUrl !== previewUrl &&
       deletePreviewUrl !== "" &&
       previewUrl !== ""
     ) {

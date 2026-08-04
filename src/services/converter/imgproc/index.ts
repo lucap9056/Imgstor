@@ -162,7 +162,7 @@ export default class Imgproc {
       worker.onmessage = (
         e: MessageEvent<DetectAnimationResponse | LogResponse>,
       ) => {
-        if (e.data.functionName == "Log") {
+        if (e.data.functionName === "Log") {
           LogMessage(e.data.message);
           return;
         }
@@ -211,7 +211,7 @@ export default class Imgproc {
       worker.onmessage = (
         e: MessageEvent<ConvertAnimatedImageResponse | LogResponse>,
       ) => {
-        if (e.data.functionName == "Log") {
+        if (e.data.functionName === "Log") {
           LogMessage(e.data.message);
           return;
         }
@@ -276,7 +276,7 @@ export default class Imgproc {
       worker.onmessage = (
         e: MessageEvent<GetFirstFrameResponse | LogResponse>,
       ) => {
-        if (e.data.functionName == "Log") {
+        if (e.data.functionName === "Log") {
           LogMessage(e.data.message);
           return;
         }
