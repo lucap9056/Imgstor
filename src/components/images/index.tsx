@@ -47,6 +47,7 @@ const Images: React.FC = () => {
   const [shouldRender, SetShouldRender] = useState(false);
   const resizeTimeoutId = useRef<NodeJS.Timeout | null>(null);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: latestUpload is intentionally included only as a manual refresh trigger; it is not read in the effect body
   useEffect(() => {
     const { title, sort } = searchContent;
 
@@ -72,10 +73,12 @@ const Images: React.FC = () => {
         offset: searchOffset,
       });
 
-      const newImages =
-        searchOffset === 0 ? searchResult : [...images, ...searchResult];
-      SetHasMoreImages(newImages.length % SEARCH.LIMIT !== 0);
-      SetImages(newImages);
+      SetImages((prevImages) => {
+        const newImages =
+          searchOffset === 0 ? searchResult : [...prevImages, ...searchResult];
+        SetHasMoreImages(newImages.length % SEARCH.LIMIT !== 0);
+        return newImages;
+      });
     } catch (err) {
       console.error(err);
       SetHasMoreImages(false);
@@ -83,7 +86,7 @@ const Images: React.FC = () => {
     }
 
     loading.remove();
-  }, [searchContent, searchOffset, latestUpload]);
+  }, [searchContent, searchOffset, latestUpload, loader, imgstor]);
 
   useEffect(() => {
     const ImageSearchChangedHandler = (
@@ -128,7 +131,7 @@ const Images: React.FC = () => {
       imgstor.off("ImageSearchChanged", ImageSearchChangedHandler);
       window.removeEventListener("resize", WindowResizeHandler);
     };
-  }, []);
+  }, [imgstor]);
 
   const HandleLoadMoreIamges = () => {
     SetSearchOffset(searchOffset + images.length);
