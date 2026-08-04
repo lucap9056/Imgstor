@@ -31,6 +31,7 @@ function App() {
   const [loaded, setLoaded] = useState(false);
   const [authInstance, SetAuthInstance] = useState<gapi.auth2.GoogleAuth>();
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally runs once on mount to initialize Google/Imgstor; re-running on t/loader/notifications/alerts changes (e.g. language switch) would needlessly restart sign-in
   useEffect(() => {
     const loading = loader.append();
 
@@ -123,7 +124,7 @@ function App() {
                   path={`${RoutePaths.SETTINGS}/*`}
                   element={<Settings />}
                 />
-                <Route index element={<></>} />
+                <Route index element={null} />
               </Routes>
             </HashRouter>
 
@@ -132,9 +133,7 @@ function App() {
         ) : (
           <SignIn onSignIn={HandleSignIn} />
         )
-      ) : (
-        <></>
-      )}
+      ) : null}
 
       <Alerts />
       <Loader.Component />
