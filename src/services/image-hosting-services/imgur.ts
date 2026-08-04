@@ -93,17 +93,15 @@ export default class Imgur {
     throw new Error("Unexpected response format from Imgur API.");
   }
 
-  public Delete(image: ImgstorImage): Promise<void> {
+  public async Delete(image: ImgstorImage): Promise<void> {
     const { clientId } = this;
 
-    return new Promise(async () => {
-      await fetch(`https://api.imgur.com/3/image/${image.deleteImageUrl}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Client-ID ${clientId}`,
-        },
-        redirect: "follow",
-      });
+    await fetch(`https://api.imgur.com/3/image/${image.deleteImageUrl}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Client-ID ${clientId}`,
+      },
+      redirect: "follow",
     });
   }
 
