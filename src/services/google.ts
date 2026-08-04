@@ -17,11 +17,12 @@ export class NotSignedInError extends Error {
 }
 
 type GoogleEventDefinitions = {
-  StatusChanged: { detail: { signedIn: boolean } };
-  ErrorOccurred: { detail: { message: string; error: Error } };
+  StatusChanged: { signedIn: boolean };
+  ErrorOccurred: { message: string; error: Error };
 };
-export type GoogleEvent<T extends keyof GoogleEventDefinitions> =
-  GoogleEventDefinitions[T];
+export type GoogleEvent<T extends keyof GoogleEventDefinitions> = CustomEvent<
+  GoogleEventDefinitions[T]
+>;
 
 export default class Google extends EventDispatcher<GoogleEventDefinitions> {
   private googleDrive: Drive;
@@ -88,17 +89,17 @@ export default class Google extends EventDispatcher<GoogleEventDefinitions> {
 
     this.googleDrive = drive;
 
-    this.emit("StatusChanged", { detail: { signedIn: true } });
+    this.emit("StatusChanged", { signedIn: true });
 
     authInstance.isSignedIn.listen((signedIn: boolean) => {
-      this.emit("StatusChanged", { detail: { signedIn } });
+      this.emit("StatusChanged", { signedIn });
     });
 
     authInstance.currentUser.listen((user) => {
       if (user.isSignedIn()) {
-        this.emit("StatusChanged", { detail: { signedIn: true } });
+        this.emit("StatusChanged", { signedIn: true });
       } else {
-        this.emit("StatusChanged", { detail: { signedIn: false } });
+        this.emit("StatusChanged", { signedIn: false });
       }
     });
   }

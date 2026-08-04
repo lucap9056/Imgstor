@@ -21,7 +21,7 @@ const TagsSelect: React.FC<Props> = ({ imgstor, onchange }) => {
 
   useEffect(() => {
     const TagsSelectedHandler = (e: TagsSelectorEvent<"TagsSelected">) => {
-      const { target, selected } = e.deteil;
+      const { target, selected } = e.detail;
       if (target !== componentId) {
         return;
       }

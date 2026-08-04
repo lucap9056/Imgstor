@@ -12,11 +12,11 @@ type SelectResponse = SelectRequest & {
 };
 
 type TagsSelectorEventDefinitions = {
-  TagsSelected: { deteil: SelectResponse };
-  DisplayChanged: { detail?: SelectRequest };
+  TagsSelected: SelectResponse;
+  DisplayChanged: SelectRequest | undefined;
 };
 export type TagsSelectorEvent<T extends keyof TagsSelectorEventDefinitions> =
-  TagsSelectorEventDefinitions[T];
+  CustomEvent<TagsSelectorEventDefinitions[T]>;
 
 export default class TagsSelector extends EventDispatcher<TagsSelectorEventDefinitions> {
   private db: ImgstorDB;
@@ -37,12 +37,12 @@ export default class TagsSelector extends EventDispatcher<TagsSelectorEventDefin
 
     const selected = tags || request.origin;
 
-    this.emit("TagsSelected", { deteil: { ...request, selected } });
+    this.emit("TagsSelected", { ...request, selected });
 
     if (requests.length === 0) {
-      this.emit("DisplayChanged", {});
+      this.emit("DisplayChanged", undefined);
     } else {
-      this.emit("DisplayChanged", { detail: requests[0] });
+      this.emit("DisplayChanged", requests[0]);
     }
   }
 
@@ -55,7 +55,7 @@ export default class TagsSelector extends EventDispatcher<TagsSelectorEventDefin
     });
 
     if (requests.length === 1) {
-      this.emit("DisplayChanged", { detail: { target, origin } });
+      this.emit("DisplayChanged", { target, origin });
     }
   }
 

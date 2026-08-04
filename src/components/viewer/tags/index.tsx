@@ -29,20 +29,20 @@ const Tags: React.FC<Props> = ({ image }) => {
     const TagsSelectedHandler = async (
       e: TagsSelectorEvent<"TagsSelected">,
     ) => {
-      if (e.deteil.target !== componentId) return;
-      setTags(e.deteil.selected);
+      if (e.detail.target !== componentId) return;
+      setTags(e.detail.selected);
 
       const originTags = new Map(
-        e.deteil.origin.map((tag) => [tag.tagId, tag]),
+        e.detail.origin.map((tag) => [tag.tagId, tag]),
       );
       const updatedTags = new Map(
-        e.deteil.selected.map((tag) => [tag.tagId, tag]),
+        e.detail.selected.map((tag) => [tag.tagId, tag]),
       );
 
-      const appendedTags = e.deteil.selected.filter(
+      const appendedTags = e.detail.selected.filter(
         (tag) => !originTags.has(tag.tagId),
       );
-      const removedTags = e.deteil.origin.filter(
+      const removedTags = e.detail.origin.filter(
         (tag) => !updatedTags.has(tag.tagId),
       );
 

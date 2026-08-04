@@ -41,7 +41,7 @@ const Search: React.FC<Props> = ({ onchange, hide }) => {
 
   useEffect(() => {
     const TagsSelectedHandler = (e: TagsSelectorEvent<"TagsSelected">) => {
-      const { target, selected } = e.deteil;
+      const { target, selected } = e.detail;
 
       if (target === componentId) {
         setSelectedTags(selected);

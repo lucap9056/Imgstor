@@ -28,11 +28,11 @@ interface ImgstorData {
 }
 
 type ImgstorDBEventDefinitions = {
-  ImageUpdated: { detail: ImgstorImage };
-  ErrorOccurred: { detail: { message: string; error: Error } };
+  ImageUpdated: ImgstorImage;
+  ErrorOccurred: { message: string; error: Error };
 };
 export type ImgstorDBEvent<T extends keyof ImgstorDBEventDefinitions> =
-  ImgstorDBEventDefinitions[T];
+  CustomEvent<ImgstorDBEventDefinitions[T]>;
 
 enum SqlJs {
   Host = "https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/",
@@ -206,19 +206,19 @@ export default class ImgstorDB extends EventDispatcher<ImgstorDBEventDefinitions
   public InsertImage(image: ImgstorImage): string {
     Image.Insert(this.db, image);
     this.changed = true;
-    this.emit("ImageUpdated", { detail: image });
+    this.emit("ImageUpdated", image);
     return this.lastInsertRowid;
   }
 
   public UpdateImage(image: ImgstorImage): void {
     Image.Update(this.db, image);
-    this.emit("ImageUpdated", { detail: image });
+    this.emit("ImageUpdated", image);
     this.changed = true;
   }
 
   public DeleteImage(imageId: string): void {
     Image.Delete(this.db, imageId);
-    this.emit("ImageUpdated", { detail: { ...ImgstorImage.Empty(), imageId } });
+    this.emit("ImageUpdated", { ...ImgstorImage.Empty(), imageId });
     this.changed = true;
   }
 

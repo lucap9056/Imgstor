@@ -26,11 +26,12 @@ export interface SearchContent {
 export type AvailableHostingServicesMap = { [id: string]: ImageHostingService };
 
 type ImgstorEventDefinitions = {
-  ImageAppended: { detail: ImgstorImage };
-  ImageSearchChanged: { detail: SearchContent };
+  ImageAppended: ImgstorImage;
+  ImageSearchChanged: SearchContent;
 };
-export type ImgstorEvent<T extends keyof ImgstorEventDefinitions> =
-  ImgstorEventDefinitions[T];
+export type ImgstorEvent<T extends keyof ImgstorEventDefinitions> = CustomEvent<
+  ImgstorEventDefinitions[T]
+>;
 
 export default class Imgstor extends EventDispatcher<ImgstorEventDefinitions> {
   public static readonly OriginalFilesFolderName = "original_files";
@@ -199,7 +200,7 @@ export default class Imgstor extends EventDispatcher<ImgstorEventDefinitions> {
 
           image.fileId = fileId;
 
-          this.emit("ImageAppended", { detail: image });
+          this.emit("ImageAppended", image);
 
           resolve(image);
         })
@@ -219,7 +220,7 @@ export default class Imgstor extends EventDispatcher<ImgstorEventDefinitions> {
   }
 
   public setImageSearch(content: SearchContent): void {
-    this.emit("ImageSearchChanged", { detail: content });
+    this.emit("ImageSearchChanged", content);
   }
 
   public get using(): Promise<number> {

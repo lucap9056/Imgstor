@@ -38,11 +38,12 @@ export class Loading {
 }
 
 type EventDefinitions = {
-  StateChanged: { detail: boolean };
+  StateChanged: boolean;
 };
 
-export type LoadingStateEvent<T extends keyof EventDefinitions> =
-  EventDefinitions[T];
+export type LoadingStateEvent<T extends keyof EventDefinitions> = CustomEvent<
+  EventDefinitions[T]
+>;
 
 export default class Loader extends BaseEventSystem<EventDefinitions> {
   public static readonly Component: React.FC = () => {
@@ -104,7 +105,7 @@ export default class Loader extends BaseEventSystem<EventDefinitions> {
     const newState = Object.keys(this.loadings).length > 0;
     if (newState !== this.state) {
       this.state = newState;
-      this.emit("StateChanged", { detail: newState });
+      this.emit("StateChanged", newState);
     }
   }
 

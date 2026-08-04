@@ -32,11 +32,11 @@ interface Props {
 }
 
 type TranscodeLogsEventDefinitions = {
-  LogAppended: { detail: string };
-  VisibleStateChanged: { detail: boolean };
+  LogAppended: string;
+  VisibleStateChanged: boolean;
 };
 export type TranscodeLogsEvent<T extends keyof TranscodeLogsEventDefinitions> =
-  TranscodeLogsEventDefinitions[T];
+  CustomEvent<TranscodeLogsEventDefinitions[T]>;
 
 export default class TranscodeLogs extends EventDispatcher<TranscodeLogsEventDefinitions> {
   public static readonly Component: React.FC<Props> = ({ transcodeLogs }) => {
@@ -107,7 +107,7 @@ export default class TranscodeLogs extends EventDispatcher<TranscodeLogsEventDef
   private transcodeMap: { [id: string]: Transcode } = {};
   private state: boolean = false;
   public println(msg: string): void {
-    this.emit("LogAppended", { detail: `${msg}\n` });
+    this.emit("LogAppended", `${msg}\n`);
   }
 
   public add(): Transcode {
@@ -146,7 +146,7 @@ export default class TranscodeLogs extends EventDispatcher<TranscodeLogsEventDef
 
     if (this.state !== state) {
       this.state = state;
-      this.emit("VisibleStateChanged", { detail: state });
+      this.emit("VisibleStateChanged", state);
     }
   }
 

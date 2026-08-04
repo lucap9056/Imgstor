@@ -44,12 +44,12 @@ enum ConfigFile {
 }
 
 type SettingsEventDefinitions = {
-  DisplayChanged: { detail: { display: boolean } };
-  StatusChanged: { detail: boolean };
-  ConfigChanged: { detail: { config: ImgstorConfig } };
+  DisplayChanged: { display: boolean };
+  StatusChanged: boolean;
+  ConfigChanged: { config: ImgstorConfig };
 };
 export type SettingsEvent<T extends keyof SettingsEventDefinitions> =
-  SettingsEventDefinitions[T];
+  CustomEvent<SettingsEventDefinitions[T]>;
 
 export default class Settings extends EventDispatcher<SettingsEventDefinitions> {
   public static readonly VERSION = 1;
@@ -175,7 +175,7 @@ export default class Settings extends EventDispatcher<SettingsEventDefinitions> 
     await googleDrive.writeFile(updatedConfig.fileId, file);
 
     this.imgstorConfig = updatedConfig;
-    this.emit("ConfigChanged", { detail: { config: updatedConfig } });
+    this.emit("ConfigChanged", { config: updatedConfig });
 
     return updatedConfig;
   }
@@ -185,6 +185,6 @@ export default class Settings extends EventDispatcher<SettingsEventDefinitions> 
   }
 
   public display(display: boolean) {
-    this.emit("DisplayChanged", { detail: { display } });
+    this.emit("DisplayChanged", { display });
   }
 }
