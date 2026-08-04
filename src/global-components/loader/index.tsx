@@ -59,7 +59,7 @@ export default class Loader extends BaseEventSystem<EventDefinitions> {
       return () => {
         loader.off("StateChanged", stateChangedHandler);
       };
-    }, []);
+    }, [loader]);
 
     if (!isLoading) {
       return null;

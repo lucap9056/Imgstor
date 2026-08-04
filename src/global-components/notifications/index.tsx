@@ -49,7 +49,7 @@ const Notifications: React.FC = () => {
     return () => {
       notifications.off("MessagesChanged", NotificationsChangedHandler);
     };
-  }, []);
+  }, [notifications]);
 
   if (messages.length > 0) {
     return (
@@ -59,6 +59,7 @@ const Notifications: React.FC = () => {
             <p className={styles.message}>{content}</p>
             {buttons.map((button, i) => (
               <button
+                // biome-ignore lint/suspicious/noArrayIndexKey: buttons are fixed at message creation and never reordered
                 key={id + i}
                 className={styles.button}
                 data-id={id || ""}
@@ -71,7 +72,7 @@ const Notifications: React.FC = () => {
         ))}
       </div>
     );
-  } else return <></>;
+  } else return null;
 };
 
 export default Notifications;

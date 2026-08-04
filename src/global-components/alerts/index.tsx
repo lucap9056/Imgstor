@@ -48,9 +48,9 @@ const Alerts: React.FC = () => {
     return () => {
       alerts.off("MessagesChanged", AlertsChangedHandler);
     };
-  }, []);
+  }, [alerts]);
 
-  if (!alert) return <></>;
+  if (!alert) return null;
 
   return <Alert key={alert.id} content={alert} />;
 };
@@ -64,6 +64,7 @@ const Alert: React.FC<{ content: Message }> = ({ content }) => {
         <div className={styles.message}>{content.content}</div>
         {content.buttons.map((button, i) => (
           <button
+            // biome-ignore lint/suspicious/noArrayIndexKey: buttons are fixed at message creation and never reordered
             key={content.id + i}
             className={styles.button}
             onClick={button.Click}
