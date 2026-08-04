@@ -228,7 +228,7 @@ export class Drive {
 
   constructor(appRoot: DriveFile) {
     if (!appRoot.id) {
-      throw new Error("");
+      throw new Error("Drive app root folder has no ID.");
     }
 
     this.appRoot = appRoot;
@@ -289,7 +289,7 @@ export class Drive {
     }
 
     if (parentId === undefined) {
-      throw new Error();
+      throw new Error("createFile: no parentId given and app root has no ID.");
     }
 
     return CreateFile({ name, mimeType, parents: [parentId] });
@@ -304,7 +304,9 @@ export class Drive {
     }
 
     if (parentId === undefined) {
-      throw new Error();
+      throw new Error(
+        "createFolder: no parentId given and app root has no ID.",
+      );
     }
 
     return CreateFile(
