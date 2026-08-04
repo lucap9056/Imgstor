@@ -33,9 +33,9 @@ const TagsSelect: React.FC<Props> = ({ imgstor, onchange }) => {
     imgstor.tagsSelector.on("TagsSelected", TagsSelectedHandler);
 
     return () => {
-      imgstor.tagsSelector.on("TagsSelected", TagsSelectedHandler);
+      imgstor.tagsSelector.off("TagsSelected", TagsSelectedHandler);
     };
-  }, []);
+  }, [componentId, imgstor, onchange]);
 
   const HandleSelectTags = () => {
     imgstor.tagsSelector.request(componentId, selectedTags);
