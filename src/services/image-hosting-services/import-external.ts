@@ -46,7 +46,7 @@ export default class ImportExternal {
 
         image.onload = () => {
           resolve({
-            ...ImgstorImage.Empty,
+            ...ImgstorImage.Empty(),
             width: file.width.toString(),
             height: file.height.toString(),
             imageUrl: imageUrl,

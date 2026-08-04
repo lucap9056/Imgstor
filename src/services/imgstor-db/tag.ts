@@ -10,14 +10,14 @@ const COLUMNS: { [K in keyof ImgstorTag]: K } = {
   name: "name",
 };
 
-export class ImgstorTag {
-  private static readonly empty: ImgstorTag = {
+export namespace ImgstorTag {
+  const empty: ImgstorTag = {
     tagId: "",
     name: "",
   };
 
-  public static get Empty(): ImgstorTag {
-    return Object.assign({}, ImgstorTag.empty);
+  export function Empty(): ImgstorTag {
+    return Object.assign({}, empty);
   }
 }
 
@@ -43,7 +43,7 @@ function Get(db: Database, ...include: (keyof ImgstorTag)[]): ImgstorTag[] {
   const columnNames = result[0].columns;
 
   for (const row of result[0].values) {
-    const tag = ImgstorTag.Empty;
+    const tag = ImgstorTag.Empty();
 
     columnNames.forEach((colName, index) => {
       tag[colName as keyof ImgstorTag] = (row[index] || "").toString();

@@ -44,7 +44,7 @@ function Get(
   const columnNames = result[0].columns;
 
   for (const row of result[0].values) {
-    const tag: ImgstorTag = ImgstorTag.Empty;
+    const tag: ImgstorTag = ImgstorTag.Empty();
 
     columnNames.forEach((colName, index) => {
       tag[colName as keyof ImgstorTag] = (row[index] || "").toString();

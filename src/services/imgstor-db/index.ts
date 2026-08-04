@@ -218,7 +218,7 @@ export default class ImgstorDB extends EventDispatcher<ImgstorDBEventDefinitions
 
   public DeleteImage(imageId: string): void {
     Image.Delete(this.db, imageId);
-    this.emit("ImageUpdated", { detail: { ...ImgstorImage.Empty, imageId } });
+    this.emit("ImageUpdated", { detail: { ...ImgstorImage.Empty(), imageId } });
     this.changed = true;
   }
 

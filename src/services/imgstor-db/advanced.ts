@@ -92,7 +92,7 @@ function SearchImages(
   const columnNames = result[0].columns;
 
   for (const row of result[0].values) {
-    const image: ImgstorImage = ImgstorImage.Empty;
+    const image: ImgstorImage = ImgstorImage.Empty();
 
     columnNames.forEach((colName, index) => {
       image[colName as keyof ImgstorImage] = (row[index] || "").toString();

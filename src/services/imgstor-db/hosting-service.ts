@@ -10,13 +10,13 @@ const COLUMNS: { [K in keyof ImgstorHostingService]: K } = {
   name: "name",
 };
 
-export class ImgstorHostingService {
-  private static readonly empty: ImgstorHostingService = {
+export namespace ImgstorHostingService {
+  const empty: ImgstorHostingService = {
     id: "",
     name: "",
   };
-  public static get Empty(): ImgstorHostingService {
-    return Object.assign({}, ImgstorHostingService.empty);
+  export function Empty(): ImgstorHostingService {
+    return Object.assign({}, empty);
   }
 }
 
@@ -44,7 +44,7 @@ function Get(
   const columnNames = result[0].columns;
 
   return result[0].values.map((row) => {
-    const hostingService = ImgstorHostingService.Empty;
+    const hostingService = ImgstorHostingService.Empty();
 
     columnNames.forEach((colName, index) => {
       hostingService[colName as keyof ImgstorHostingService] = (

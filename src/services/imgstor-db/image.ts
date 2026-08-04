@@ -41,8 +41,8 @@ const COLUMNS: { [K in keyof ImgstorImage]: K } = {
 
 export type ImgstorImageSort = "default" | "newest" | "oldest";
 
-export class ImgstorImage {
-  private static readonly empty: ImgstorImage = {
+export namespace ImgstorImage {
+  const empty: ImgstorImage = {
     imageId: "",
     name: "",
     mimeType: "",
@@ -61,14 +61,14 @@ export class ImgstorImage {
     fileId: "",
   };
 
-  public static get Empty(): ImgstorImage {
-    return Object.assign({}, ImgstorImage.empty);
+  export function Empty(): ImgstorImage {
+    return Object.assign({}, empty);
   }
 
-  public static readonly SORT = class {
-    public static readonly DEFAULT: ImgstorImageSort = "default";
-    public static readonly NEWEST: ImgstorImageSort = "newest";
-    public static readonly OLDEST: ImgstorImageSort = "oldest";
+  export const SORT = {
+    DEFAULT: "default" as ImgstorImageSort,
+    NEWEST: "newest" as ImgstorImageSort,
+    OLDEST: "oldest" as ImgstorImageSort,
   };
 }
 
@@ -106,7 +106,7 @@ function Get(db: Database, ...include: (keyof ImgstorImage)[]): ImgstorImage[] {
   const columnNames = result[0].columns;
 
   for (const row of result[0].values) {
-    const image = ImgstorImage.Empty;
+    const image = ImgstorImage.Empty();
 
     columnNames.forEach((colName, index) => {
       image[colName as keyof ImgstorImage] = (row[index] || "").toString();
