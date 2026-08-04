@@ -46,13 +46,12 @@ export class MessageButton extends EventDispatcher<MessageButtonEventDefinitions
    * Trigger button click
    */
   public Click(): void {
-    const { _message, autoRemove } = this;
-    if (!_message) return;
+    if (!this._message) return;
 
-    this.emit("Clicked", { detail: _message });
+    this.emit("Clicked", { detail: this._message });
 
-    if (autoRemove) {
-      _message.remove();
+    if (this.autoRemove) {
+      this._message.remove();
     }
   }
 }
@@ -66,13 +65,13 @@ export interface MessageOptions {
 }
 
 export class Message {
-  public static Type = class {
+  public static readonly Type = {
     /** `NORMAL`: Normal message, will be automatically removed after a delay if no button is present, or can be removed via command. */
-    public static readonly NORMAL: MessageType = "NORMAL";
+    NORMAL: "NORMAL" as MessageType,
     /** `ALERT`: Alert message, must be manually removed or removed via command. */
-    public static readonly ALERT: MessageType = "ALERT";
+    ALERT: "ALERT" as MessageType,
     /** `ERROR`: Error message, will be automatically removed after a delay if no button is present, or can be removed via command. */
-    public static readonly ERROR: MessageType = "ERROR";
+    ERROR: "ERROR" as MessageType,
   };
 
   private static get CreateId(): string {
