@@ -1,17 +1,9 @@
-/**
- * Google操作函數
- */
 import { gapi } from "gapi-script";
 import EventDispatcher from "structs/event-dispatcher";
 
 export class NotSignedInError extends Error {
-  public authInstance: gapi.auth2.GoogleAuth;
-  constructor(
-    authInstance: gapi.auth2.GoogleAuth,
-    message: string = "User is not signed in.",
-  ) {
+  constructor(message: string = "User is not signed in.") {
     super(message);
-    this.authInstance = authInstance;
     this.name = "NotSignedInError";
   }
 }
@@ -24,84 +16,129 @@ export type GoogleEvent<T extends keyof GoogleEventDefinitions> = CustomEvent<
   GoogleEventDefinitions[T]
 >;
 
+const SCOPE = "https://www.googleapis.com/auth/drive.appdata";
+const GAPI_LOAD_TIMEOUT_MS = 10000;
+const REFRESH_MARGIN_SECONDS = 60;
+
+const CLIENT_ID = process.env.VITE_GOOGLE_CLIENT_ID;
+
+function LoadGapiClient(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new Error("Failed to load Google API client (timed out)."));
+    }, GAPI_LOAD_TIMEOUT_MS);
+
+    gapi.load("client", () => {
+      clearTimeout(timeoutId);
+      resolve();
+    });
+  });
+}
+
+function RequestAccessToken(
+  prompt: "" | "consent",
+): Promise<google.accounts.oauth2.TokenResponse> {
+  return new Promise((resolve, reject) => {
+    if (!CLIENT_ID) {
+      reject(new Error("Google client ID is empty"));
+      return;
+    }
+
+    const tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPE,
+      callback: (response) => {
+        if (response.error) {
+          reject(new Error(response.error_description || response.error));
+          return;
+        }
+        resolve(response);
+      },
+      error_callback: (error) => {
+        reject(new Error(error.message || error.type));
+      },
+    });
+
+    tokenClient.requestAccessToken({ prompt });
+  });
+}
+
+function SetGapiToken(accessToken: string): void {
+  gapi.client.setToken({ access_token: accessToken });
+}
+
+async function EnsureDriveApiLoaded(): Promise<void> {
+  if (gapi.client.drive) return;
+
+  await gapi.client.load("drive", "v3");
+
+  if (!gapi.client.drive) {
+    throw new Error("Failed to load the Google Drive API client.");
+  }
+}
+
 export default class Google extends EventDispatcher<GoogleEventDefinitions> {
   private googleDrive: Drive;
-  private static k = process.env.VITE_GOOGLE_API_KEY;
-  private static c = process.env.VITE_GOOGLE_CLIENT_ID;
+  private accessToken: string;
+  private refreshTimeoutId?: ReturnType<typeof setTimeout>;
 
   public static new = async (): Promise<Google> => {
-    const config = {
-      clientId: Google.c,
-      discoveryDocs: [
-        "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest",
-      ],
-      scope: "https://www.googleapis.com/auth/drive.appdata",
-    };
+    await LoadGapiClient();
 
-    return new Promise((resolve, reject) => {
-      gapi.load("client:auth2", () => {
-        gapi.client
-          .init(config)
-          .then(() => {
-            if (!Google.k) {
-              return reject(new Error("Google api key is empty"));
-            }
+    await gapi.client.init({});
+    await EnsureDriveApiLoaded();
 
-            gapi.client.setApiKey(Google.k);
-            const authInstance = gapi.auth2.getAuthInstance();
+    let response: google.accounts.oauth2.TokenResponse;
+    try {
+      response = await RequestAccessToken("");
+    } catch {
+      throw new NotSignedInError();
+    }
 
-            const signedIn = authInstance.isSignedIn.get();
+    SetGapiToken(response.access_token);
+    const drive = await Drive.new();
 
-            if (signedIn) {
-              Drive.new()
-                .then((drive) => {
-                  const google = new Google(authInstance, drive);
-                  resolve(google);
-                })
-                .catch(reject);
-            } else {
-              reject(new NotSignedInError(authInstance));
-            }
-          })
-          .catch(reject);
-      });
-    });
+    return new Google(response, drive);
   };
 
-  public static signIn = (
-    authInstance: gapi.auth2.GoogleAuth,
-  ): Promise<Google> =>
-    new Promise((resolve, reject) => {
-      authInstance
-        .signIn()
-        .then(async () => {
-          const drive = await Drive.new();
+  public static signIn = async (): Promise<Google> => {
+    const response = await RequestAccessToken("consent");
 
-          const google = new Google(authInstance, drive);
+    SetGapiToken(response.access_token);
+    await EnsureDriveApiLoaded();
+    const drive = await Drive.new();
 
-          resolve(google);
-        })
-        .catch(reject);
-    });
+    return new Google(response, drive);
+  };
 
-  constructor(authInstance: gapi.auth2.GoogleAuth, drive: Drive) {
+  constructor(response: google.accounts.oauth2.TokenResponse, drive: Drive) {
     super();
 
     this.googleDrive = drive;
+    this.accessToken = response.access_token;
 
+    this.scheduleRefresh(response.expires_in);
     this.emit("StatusChanged", { signedIn: true });
+  }
 
-    authInstance.isSignedIn.listen((signedIn: boolean) => {
-      this.emit("StatusChanged", { signedIn });
-    });
+  private scheduleRefresh(expiresInSeconds: number): void {
+    if (this.refreshTimeoutId) {
+      clearTimeout(this.refreshTimeoutId);
+    }
 
-    authInstance.currentUser.listen((user) => {
-      if (user.isSignedIn()) {
-        this.emit("StatusChanged", { signedIn: true });
-      } else {
+    const refreshInMs =
+      Math.max(expiresInSeconds - REFRESH_MARGIN_SECONDS, 30) * 1000;
+
+    this.refreshTimeoutId = setTimeout(async () => {
+      try {
+        const response = await RequestAccessToken("");
+        this.accessToken = response.access_token;
+        SetGapiToken(response.access_token);
+        this.scheduleRefresh(response.expires_in);
+      } catch {
         this.emit("StatusChanged", { signedIn: false });
       }
-    });
+    }, refreshInMs);
   }
 
   public get drive(): Drive {
@@ -109,22 +146,25 @@ export default class Google extends EventDispatcher<GoogleEventDefinitions> {
   }
 
   public get signedIn(): boolean {
-    return gapi.auth2.getAuthInstance().isSignedIn.get();
+    return this.accessToken !== "";
   }
 
-  public signOut() {
-    console.log("signout");
-    const authInstance = gapi.auth2.getAuthInstance();
-    if (authInstance.isSignedIn.get()) {
-      authInstance
-        .signOut()
-        .then(() => {
-          console.log("User signed out successfully");
-        })
-        .catch((error: Error) => {
-          console.error("Error during sign-out: ", error);
-        });
+  public signOut(): void {
+    const { accessToken } = this;
+
+    if (this.refreshTimeoutId) {
+      clearTimeout(this.refreshTimeoutId);
     }
+    this.accessToken = "";
+
+    if (!accessToken) {
+      this.emit("StatusChanged", { signedIn: false });
+      return;
+    }
+
+    google.accounts.oauth2.revoke(accessToken, () => {
+      this.emit("StatusChanged", { signedIn: false });
+    });
   }
 }
 

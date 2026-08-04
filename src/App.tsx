@@ -23,7 +23,6 @@ function App() {
   const { t } = useTranslation();
   const [imgstor, SetImgstor] = useState<Imgstor>();
   const [loaded, setLoaded] = useState(false);
-  const [authInstance, SetAuthInstance] = useState<gapi.auth2.GoogleAuth>();
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally runs once on mount to initialize Google/Imgstor; re-running on t/loader changes (e.g. language switch) would needlessly restart sign-in
   useEffect(() => {
@@ -43,7 +42,6 @@ function App() {
           console.log(err);
           if (err instanceof NotSignedInError) {
             SetImgstor(undefined);
-            SetAuthInstance(err.authInstance);
           } else {
             toast.error((err as Error).message);
           }
@@ -57,17 +55,12 @@ function App() {
   }, []);
 
   const HandleSignIn = async () => {
-    console.log(authInstance);
-    if (!authInstance) {
-      return;
-    }
-
     setLoaded(false);
 
     const loading = loader.append();
 
     const result = await buildResult(async () => {
-      const google = await Google.signIn(authInstance);
+      const google = await Google.signIn();
       return Imgstor.New(google);
     });
 
