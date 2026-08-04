@@ -1,15 +1,13 @@
 import TagItem from "components/tags-selector/tag-item";
-import { useAlerts } from "global-components/alerts";
+import { useConfirm } from "global-components/confirm-dialog";
 import { useLoader } from "global-components/loader";
-import { useNotifications } from "global-components/notifications";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-
 import { useImgstor } from "services/imgstor";
 import type { ImgstorTag } from "services/imgstor-db";
 import type { TagsSelectorEvent } from "services/tags-selector";
-import { Message, MessageButton } from "structs/message";
+import { toast } from "sonner";
 
 import componentStyles from "styles/components.module.scss";
 import styles from "./style.module.scss";
@@ -20,9 +18,8 @@ interface DraggingPosation {
 }
 
 const TagsSelector: React.FC = () => {
-  const notifications = useNotifications();
   const loader = useLoader();
-  const alerts = useAlerts();
+  const confirm = useConfirm();
   const { t } = useTranslation();
   const imgstor = useImgstor();
   const [target, setTarget] = useState<string>();
@@ -57,22 +54,13 @@ const TagsSelector: React.FC = () => {
         if (imgstor.db.Changed) {
           (async () => {
             const loading = loader.append();
-            const saving = new Message({
-              type: Message.Type.NORMAL,
-              content: t("saving"),
-            });
-            notifications.append(saving);
+            const savingToastId = toast.loading(t("main.saving"));
             try {
               await imgstor.db.Save();
             } catch (err) {
-              notifications.append(
-                new Message({
-                  type: Message.Type.ERROR,
-                  content: (err as Error).message,
-                }),
-              );
+              toast.error((err as Error).message);
             } finally {
-              saving.remove();
+              toast.dismiss(savingToastId);
               loading.remove();
             }
           })();
@@ -85,30 +73,32 @@ const TagsSelector: React.FC = () => {
     return () => {
       imgstor.tagsSelector.off("DisplayChanged", displayChangedHandler);
     };
-  }, [imgstor, loader, notifications, t]);
+  }, [imgstor, loader, t]);
 
   const handleRemoveTag = (tag: ImgstorTag) => {
     const { tagId, name } = tag;
 
-    const confirm = new MessageButton(t("main.confirm"));
-    confirm.on("Clicked", () => {
-      if (selectedTags.find((t) => t.tagId === tagId)) {
-        setSelectedTags(selectedTags.filter((t) => t.tagId !== tagId));
-      }
+    confirm({
+      description: t("tags-selector.alert.remove-tag", { name }),
+      buttons: [
+        { label: t("main.cancel") },
+        {
+          label: t("main.confirm"),
+          variant: "danger",
+          onClick: () => {
+            if (selectedTags.find((t) => t.tagId === tagId)) {
+              setSelectedTags(selectedTags.filter((t) => t.tagId !== tagId));
+            }
 
-      if (notusedTags.find((t) => t.tagId === tagId)) {
-        setNotusedTags(notusedTags.filter((t) => t.tagId !== tagId));
-      }
+            if (notusedTags.find((t) => t.tagId === tagId)) {
+              setNotusedTags(notusedTags.filter((t) => t.tagId !== tagId));
+            }
 
-      imgstor.db.DeleteTag(tagId);
+            imgstor.db.DeleteTag(tagId);
+          },
+        },
+      ],
     });
-
-    const removeMessage = new Message({
-      type: Message.Type.ALERT,
-      content: t("tags-selector.alert.remove-tag", { name }),
-      buttons: [new MessageButton(t("main.cancel")), confirm],
-    });
-    alerts.append(removeMessage);
   };
 
   const handleSelectTag = ({ tagId }: ImgstorTag) => {
