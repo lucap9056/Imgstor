@@ -41,6 +41,7 @@ const ImageComponenet: React.FC<Props> = ({ image, onload }) => {
     threshold: 0.1,
   });
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally runs only once when the item first scrolls into view (useInView triggerOnce); re-running on prop changes would re-invoke onload and cause duplicate pagination requests
   useEffect(() => {
     if (!inView || !hostingService) return;
 
