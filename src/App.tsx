@@ -1,5 +1,5 @@
 import Loader, { useLoader } from "global-components/loader";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HashRouter, Route, Routes } from "react-router-dom";
 import { Toaster, toast } from "sonner";
@@ -20,6 +20,18 @@ function App() {
   const loader = useLoader();
   const { t } = useTranslation();
   const [imgstor, SetImgstor] = useState<Imgstor>();
+
+  useEffect(() => {
+    if (!imgstor) return;
+
+    const handleSignedOut = () => {
+      toast.error(t("google.session-expired"));
+      SetImgstor(undefined);
+    };
+
+    imgstor.on("SignedOut", handleSignedOut);
+    return () => imgstor.off("SignedOut", handleSignedOut);
+  }, [imgstor, t]);
 
   const HandleSignIn = async () => {
     const loading = loader.append();

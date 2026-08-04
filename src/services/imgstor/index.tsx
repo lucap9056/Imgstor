@@ -28,6 +28,7 @@ export type AvailableHostingServicesMap = { [id: string]: ImageHostingService };
 type ImgstorEventDefinitions = {
   ImageAppended: ImgstorImage;
   ImageSearchChanged: SearchContent;
+  SignedOut: undefined;
 };
 export type ImgstorEvent<T extends keyof ImgstorEventDefinitions> = CustomEvent<
   ImgstorEventDefinitions[T]
@@ -128,6 +129,12 @@ export default class Imgstor extends EventDispatcher<ImgstorEventDefinitions> {
     settings.on("ConfigChanged", ({ detail }) =>
       this.loadImageHostingServices(detail.config),
     );
+
+    google.on("StatusChanged", ({ detail }) => {
+      if (!detail.signedIn) {
+        this.emit("SignedOut", undefined);
+      }
+    });
 
     this.loadImageHostingServices(settings.config);
   }

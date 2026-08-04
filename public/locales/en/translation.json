@@ -8,7 +8,8 @@
         "signin": {
             "label": "Sign in with Google",
             "failed": "Sign in failed"
-        }
+        },
+        "session-expired": "Your session has expired. Please sign in again."
     },
     "main": {
         "confirm": "Confirm",

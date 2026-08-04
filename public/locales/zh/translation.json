@@ -4,6 +4,7 @@
   "google.loading": "Google API 載入中...",
   "google.signin": "使用 Google 帳戶登入",
   "google.signin.fail": "登入失敗",
+  "google.session-expired": "登入已逾期，請重新登入",
   "main.confirm": "確認",
   "main.cancel": "取消",
   "main.save": "儲存",
